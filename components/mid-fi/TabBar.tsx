@@ -3,31 +3,43 @@ import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Home, User } from "lucide-react-native";
 import { router } from "expo-router";
-
+import { useTheme } from "../../lib/ThemeContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 type TabProps = {
   activeTab: "home" | "profile";
 };
 
 export function TabBar({ activeTab }: TabProps) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const handleTabPress = (tab: "home" | "profile") => {
     if (tab === "home") router.push("/");
     else router.push("/profile");
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.background,
+          paddingBottom: Math.min(insets.bottom, 2),
+        },
+      ]}
+    >
       <TouchableOpacity
         style={styles.tab}
         onPress={() => handleTabPress("home")}
       >
         <Home
           size={22}
-          color={activeTab === "home" ? "#2563EB" : "#9CA3AF"}
+          color={activeTab === "home" ? theme.primary : theme.secondaryText}
         />
         <Text
           style={[
             styles.label,
-            activeTab === "home" && { color: "#2563EB", fontWeight: "600" },
+            { color: theme.secondaryText },
+            activeTab === "home" && { color: theme.primary, fontWeight: "600" },
           ]}
         >
           Home
@@ -40,12 +52,13 @@ export function TabBar({ activeTab }: TabProps) {
       >
         <User
           size={22}
-          color={activeTab === "profile" ? "#2563EB" : "#9CA3AF"}
+          color={activeTab === "profile" ? theme.primary : theme.secondaryText}
         />
         <Text
           style={[
             styles.label,
-            activeTab === "profile" && { color: "#2563EB", fontWeight: "600" },
+            { color: theme.secondaryText },
+            activeTab === "profile" && { color: theme.primary, fontWeight: "600" },
           ]}
         >
           Profile
@@ -59,10 +72,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    alignItems: "flex-end",
+    paddingTop: 12,
+    paddingHorizontal: 24,
   },
   tab: {
     alignItems: "center",
@@ -70,7 +82,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: "#6B7280",
     marginTop: 2,
   },
 });
