@@ -1,12 +1,21 @@
 import React from "react";
-import { Text, TouchableOpacity, View, StyleSheet, GestureResponderEvent, ViewStyle, TextStyle } from "react-native";
+import {
+  Text,
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  GestureResponderEvent,
+  ViewStyle,
+  TextStyle,
+  StyleProp,
+} from "react-native";
 
 type Props = {
   children: React.ReactNode;
   onPress?: (e: GestureResponderEvent) => void;
   icon?: React.ReactNode;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   variant?: "primary" | "secondary";
 };
 
