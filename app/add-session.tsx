@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   View,
@@ -9,17 +9,23 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  ScrollView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from "react-native-uuid";
 import { Calendar, ArrowLeft } from "lucide-react-native";
-
+import { useGlobalStyles } from "../styles/globalStyles";
 import { Button } from "../components/mid-fi/Button";
-import { saveSession, getSessions } from "../lib/sessions";
+import { useSessions } from "../lib/SessionsContext";
+import { useTheme } from "../lib/ThemeContext";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export default function AddSession() {
   const { edit, id } = useLocalSearchParams();
+  const safeId = useMemo(
+    () => (Array.isArray(id) ? (id.length > 0 ? id[0] : undefined) : (id as string | undefined)),
+    [id]
+  );
   const isEditing = edit === "true";
 
   const [subject, setSubject] = useState("");
@@ -28,29 +34,22 @@ export default function AddSession() {
   const [date, setDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [repeat, setRepeat] = useState(false);
-
+  const { sessions, addSession, updateSession } = useSessions();
+  const { theme } = useTheme();
+  const globalStyles = useGlobalStyles();
   // Load session when editing
   useEffect(() => {
-    if (isEditing && id) {
-      loadSessionForEdit();
-    }
-  }, [isEditing, id]);
+    if (!isEditing || !safeId) return;
 
-  const loadSessionForEdit = async () => {
-    try {
-      const sessions = await getSessions();
-      const found = sessions.find((s: any) => s.id === id);
-      if (found) {
-        setSubject(found.subject);
-        setDuration(String(found.duration));
-        setNotes(found.notes || "");
-        setDate(found.date ? new Date(found.date) : null);
-        setRepeat(found.repeat || false);
-      }
-    } catch (error) {
-      console.error("Error loading session for edit:", error);
+    const existing = sessions.find((session) => session.id === safeId);
+    if (existing) {
+      setSubject(existing.subject);
+      setDuration(String(existing.duration));
+      setNotes(existing.notes || "");
+      setDate(existing.date ? new Date(existing.date) : null);
+      setRepeat(existing.repeat || false);
     }
-  };
+  }, [isEditing, safeId, sessions]);
 
   const handleSave = async () => {
     if (!subject || !duration) {
@@ -58,42 +57,27 @@ export default function AddSession() {
       return;
     }
 
-    try {
-      const sessions = await getSessions();
-
-      if (isEditing && id) {
-        // update existing
-        const updated = sessions.map((s: any) =>
-          s.id === id
-            ? {
-                ...s,
-                subject,
-                duration: Number(duration),
-                notes,
-                date: date ? date.toISOString() : null,
-                repeat,
-              }
-            : s
-        );
-        await AsyncStorage.setItem("sessions", JSON.stringify(updated));
-      } else {
-        // create new
-        const newSession = {
-          id: String(uuid.v4()),
-          subject,
-          duration: Number(duration),
-          notes,
-          date: date ? date.toISOString() : null,
-          repeat,
-        };
-        await saveSession(newSession);
-      }
-
-      router.replace("/"); // go home
-    } catch (error) {
-      console.error("Error saving session:", error);
-      Alert.alert("Error", "Failed to save session. Please try again.");
+    if (isEditing && safeId) {
+      await updateSession(safeId, {
+        subject,
+        duration: Number(duration),
+        notes,
+        date: date ? date.toISOString() : null,
+        repeat,
+      });
+    } else {
+      const newSession = {
+        id: String(uuid.v4()),
+        subject,
+        duration: Number(duration),
+        notes,
+        date: date ? date.toISOString() : null,
+        repeat,
+      };
+      await addSession(newSession);
     }
+
+    router.back(); // go home
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -102,147 +86,189 @@ export default function AddSession() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <ArrowLeft size={22} color="#111827" />
-      </TouchableOpacity>
-
-      <View style={{ marginTop: 60 }}>
-        <Text style={styles.header}>
-          {isEditing ? "Edit Session" : "Add Session"}
-        </Text>
-
-        {/* Subject */}
-        <TextInput
-          style={styles.input}
-          placeholder="Subject"
-          value={subject}
-          onChangeText={setSubject}
-        />
-
-        {/* Duration */}
-        <TextInput
-          style={styles.input}
-          placeholder="Duration (mins)"
-          keyboardType="numeric"
-          value={duration}
-          onChangeText={setDuration}
-        />
-
-        {/* Notes */}
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="Notes (optional)"
-          multiline
-          value={notes}
-          onChangeText={setNotes}
-        />
-
-        {/* Date & Time */}
-        <Text style={styles.label}>Date & Time</Text>
-        <TouchableOpacity
-          style={styles.datePicker}
-          onPress={() => setShowPicker(true)}
-        >
-          <Text style={styles.dateText}>
-            {date ? date.toLocaleString() : "Select date and time"}
+    <SafeAreaProvider>
+      <SafeAreaView style={[globalStyles.container]}>
+        <View style={[globalStyles.headerCard, { marginBottom: 12}]}>
+          <Text style={[globalStyles.headerText]}>
+            {isEditing ? "Edit Session" : "Add Session"}
           </Text>
-          <Calendar size={20} color="#6B7280" />
-        </TouchableOpacity>
-
-        {showPicker && (
-          <DateTimePicker
-            value={date || new Date()}
-            mode="datetime"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            onChange={handleDateChange}
-          />
-        )}
-
-        {/* Repeat weekly toggle */}
-        <View style={styles.repeatContainer}>
-          <Text style={styles.repeatLabel}>Repeat weekly</Text>
-          <Switch value={repeat} onValueChange={setRepeat} />
+          <TouchableOpacity
+            style={[
+              styles.backButton,
+              { backgroundColor: theme.background, borderColor: theme.border },
+            ]}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={22} color={theme.text} />
+          </TouchableOpacity>
         </View>
+        <ScrollView contentContainerStyle={[styles.scrollContent]}>
+          <View
+            style={[
+              styles.contentCard,
+              {
+                backgroundColor: theme.background
+              },
+            ]}
+          >
+            {/* Subject */}
+            <Text style={[styles.label, { color: theme.text }]}>Subject</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.card, borderColor: theme.border, color: theme.text },
+              ]}
+              placeholder="Subject"
+              value={subject}
+              onChangeText={setSubject}
+              placeholderTextColor={theme.secondaryText}
+            />
 
-        <Button onPress={handleSave}>
-          {isEditing ? "Update Session" : "Save Session"}
-        </Button>
-      </View>
-    </View>
+            {/* Duration */}
+            <Text style={[styles.label, { color: theme.text }]}>Duration (mins)</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.card, borderColor: theme.border, color: theme.text },
+              ]}
+              placeholder="Duration (mins)"
+              keyboardType="numeric"
+              value={duration}
+              onChangeText={setDuration}
+              placeholderTextColor={theme.secondaryText}
+            />
+
+            {/* Notes */}
+            <Text style={[styles.label, { color: theme.text }]}>Notes (optional)</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { height: 100, backgroundColor: theme.card, borderColor: theme.border, color: theme.text },
+              ]}
+              placeholder="Notes (optional)"
+              multiline
+              value={notes}
+              onChangeText={setNotes}
+              placeholderTextColor={theme.secondaryText}
+            />
+
+            {/* Date & Time */}
+            <Text style={[styles.label, { color: theme.text }]}>Date & Time</Text>
+            <TouchableOpacity
+              style={[
+                styles.datePicker,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+              onPress={() => setShowPicker(true)}
+            >
+              <Text style={[styles.dateText, { color: theme.secondaryText }]}>
+                {date ? date.toLocaleString() : "Select date and time"}
+              </Text>
+              <Calendar size={20} color={theme.primaryText}/>
+            </TouchableOpacity>
+
+            {showPicker && (
+              <DateTimePicker
+                value={date || new Date()}
+                mode="datetime"
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                onChange={handleDateChange}
+              />
+            )}
+
+            {/* Repeat weekly toggle */}
+            <View
+              style={[
+                styles.repeatContainer,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text style={[styles.repeatLabel, { color: theme.text }]}>Repeat weekly</Text>
+              <Switch
+                value={repeat}
+                onValueChange={setRepeat}
+                trackColor={{ false: theme.border, true: theme.primary }}
+                thumbColor={repeat ? theme.background : theme.card}
+              />
+            </View>
+
+            <Button
+              onPress={handleSave}
+              style={{ backgroundColor: theme.primary, marginTop: 12 }}
+              textStyle={{ color: theme.primaryText }}
+            >
+              {isEditing ? "Update Session" : "Save Session"}
+            </Button>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-    padding: 20,
+  scrollContent: {
+    paddingBottom: 0,
+  },
+  contentCard: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   backButton: {
     position: "absolute",
-    top: 50,
+    top: 12,
     left: 20,
     zIndex: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#111827",
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    alignSelf: "flex-start",
   },
   input: {
-    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 10,
     padding: 12,
-    marginBottom: 16,
     fontSize: 16,
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
   },
   datePicker: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
   },
   dateText: {
     fontSize: 16,
-    color: "#6B7280",
   },
   repeatContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 10,
     padding: 12,
     marginBottom: 24,
   },
   repeatLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: "500",
+  },
+  headingSpacing: {
+    marginBottom: 24,
   },
 });
