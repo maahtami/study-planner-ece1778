@@ -1,5 +1,6 @@
 export type Session = {
     id: string;
+    userId: string | undefined;
     subject: string;
     duration: number;         // minutes
     notes?: string;
