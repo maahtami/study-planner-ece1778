@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Bell, Palette, Flame, Trophy, Clock, UserPlus, CheckCircle2 } from "lucide-react-native";
-import { computeStreak } from "../lib/sessions";
 import { useTheme } from "../lib/ThemeContext";
 import { TabBar } from "../components/mid-fi/TabBar";
 import { useGlobalStyles } from "../styles/globalStyles";
