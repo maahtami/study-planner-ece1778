@@ -1,0 +1,1 @@
+To run the project, you need to build it using npx expo run:[ios/andriod]
