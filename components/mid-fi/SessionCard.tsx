@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
-import { Clock } from "lucide-react-native";
+import { Clock, CheckCircle2 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useTheme } from "../../lib/ThemeContext";
 
@@ -10,6 +10,7 @@ type Props = {
   duration: number;
   notes?: string;
   date?: string | null;
+  completed?: boolean;
 };
 
 function formatSessionDate(date?: string | null) {
@@ -19,7 +20,7 @@ function formatSessionDate(date?: string | null) {
   return formatted.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
-export function SessionCard({ id, subject, duration, notes, date }: Props) {
+export function SessionCard({ id, subject, duration, notes, date, completed }: Props) {
   const { theme } = useTheme();
   const scheduledTime = formatSessionDate(date);
 
@@ -36,7 +37,10 @@ export function SessionCard({ id, subject, duration, notes, date }: Props) {
         },
       ]}
     >
-      <Text style={[styles.title, { color: theme.text }]}>{subject}</Text>
+      <View style={styles.titleContainer}>
+        <Text style={[styles.title, { color: theme.text }]}>{subject}</Text>
+        {completed ? <CheckCircle2 size={16} color={theme.primary} style={styles.completedIcon} /> : null}
+      </View>
       <View style={styles.metaRow}>
         <Clock size={16} color={theme.secondaryText} />
         <Text style={[styles.metaText, { color: theme.secondaryText }]}>
@@ -62,4 +66,6 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
   metaText: { fontSize: 14 },
   notes: { fontSize: 15 },
+  titleContainer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  completedIcon: { marginBottom: 8 },
 });
