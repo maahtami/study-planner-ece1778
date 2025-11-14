@@ -70,7 +70,7 @@ export default function SessionDetails() {
         style: "destructive",
         onPress: async () => {
           await deleteSession(safeId);
-          router.replace("/");
+          router.back();
         },
       },
     ]);
@@ -95,6 +95,8 @@ export default function SessionDetails() {
           .catch((e) => {
             console.error("Failed to complete session:", e);
           });
+
+          router.back();
       }
 
       return next;
