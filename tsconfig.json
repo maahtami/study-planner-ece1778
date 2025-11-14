@@ -20,7 +20,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "babel.config.js"  ],
   "exclude": [
     "node_modules"
   ],
