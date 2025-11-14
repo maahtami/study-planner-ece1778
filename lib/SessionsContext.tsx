@@ -45,6 +45,7 @@ type SessionsContextValue = {
   addSession: (session: Session) => Promise<void>;
   updateSession: (id: string, patch: Partial<Session>) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
+  restartSession: (id: string) => Promise<void>;
 
   // gamification API
   completeSession: (id: string) => Promise<{ gamification: GamificationState | null; session?: Session }>;
@@ -169,6 +170,21 @@ export function SessionsProvider({ children }: ProviderProps) {
     [refreshSessions]
   );
 
+  const restartSession = useCallback(
+    async (id: string) => {
+      dispatch({ type: "UPDATE_SESSION", payload: { id, patch: { completed: false, completedAt: null } } });
+      try {
+        await persistUpdateSession(id, { completed: false, completedAt: null });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to restart the study session.";
+        dispatch({ type: "LOAD_FAILURE", payload: message });
+        await refreshSessions();
+      }
+    },
+    [refreshSessions]
+  );
+
   const completeSession = useCallback(
     async (id: string) => {
       let updatedSession: Session | undefined;
@@ -236,6 +252,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       updateSession,
       deleteSession,
       completeSession,
+      restartSession,
       refreshGamification,
       gamification,
     }),
@@ -248,6 +265,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       updateSession,
       deleteSession,
       completeSession,
+      restartSession,
       refreshGamification,
       gamification,
     ]
