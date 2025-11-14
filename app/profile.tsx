@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Bell, Palette, Flame, Trophy, Clock, UserPlus } from "lucide-react-native";
+import { Bell, Palette, Flame, Trophy, Clock, UserPlus, CheckCircle2 } from "lucide-react-native";
 import { computeStreak } from "../lib/sessions";
 import { useTheme } from "../lib/ThemeContext";
 import { TabBar } from "../components/mid-fi/TabBar";
@@ -51,7 +51,6 @@ export default function Profile() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [draftReminderDate, setDraftReminderDate] = useState<Date | null>(null);
   const [notificationBusy, setNotificationBusy] = useState(false);
-  const globalStyles = useGlobalStyles();
   const { sessions } = useSessions();
   const router = useRouter();
   const { user: authUser, cachedUser, initializing: authInitializing, isSignedIn } = useAuth();
@@ -73,7 +72,7 @@ export default function Profile() {
   }, [gamification?.sessionsToday]);
 
   const streak = gamification?.streak ?? 0;
-  const badges = useMemo(() => 
+  const badges = useMemo(() => {
       const builtIn = [
       { id: 1, name: "Beginner", unlocked: streak >= 1 },
       { id: 2, name: "Consistent", unlocked: streak >= 3 },
@@ -430,7 +429,7 @@ export default function Profile() {
 
               {/* Today's Sessions Completed */}
               <View style={styles.streakBanner}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.streakLabel}>Today</Text>
                   <Text style={styles.streakValue}>
                     {gamification?.sessionsToday ?? 0} {gamification?.sessionsToday === 1 ? "session" : "sessions"}
@@ -531,7 +530,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
   },
   streakLabel: { fontSize: 14, color: "#92400E", fontWeight: "600" },
-  streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F", marginTop: 6 },
+  streakValueContainer: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F" },
   streakIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center" },
   sectionLabel: { fontSize: 16, fontWeight: "700", marginTop: 10 },
   badgesRow: { flexDirection: "row", justifyContent: "space-around", marginTop: 12 },
