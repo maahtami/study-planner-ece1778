@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Modal } from "react-native";
 import LottieView from "lottie-react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
-import { useSessions } from "../contexts/SessionsContext";
+import { useSessions } from "../../lib/SessionsContext";
 
 type Props = {
   visible: boolean;
