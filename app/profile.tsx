@@ -1,5 +1,5 @@
 // app/profile.tsx
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -24,6 +24,9 @@ import {
 } from "../lib/notifications";
 import { saveSettings } from "../lib/settings";
 
+// Lottie
+import LottieView from "lottie-react-native";
+
 // helper functions
 function isoToDateAtToday(isoHM: string) {
   const [h, m] = isoHM.split(":").map((n) => parseInt(n, 10));
@@ -40,11 +43,27 @@ function dateToISOHM(d: Date) {
 export default function Profile() {
   const { theme, settings, setSettings, toggleTheme } = useTheme();
   const globalStyles = useGlobalStyles();
-  const { gamification } = useSessions(); // ✅ use gamification state
+  const { gamification } = useSessions();
 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [draftReminderDate, setDraftReminderDate] = useState<Date | null>(null);
   const [notificationBusy, setNotificationBusy] = useState(false);
+
+  // Confetti animation state
+  const [showSessionAnimation, setShowSessionAnimation] = useState(false);
+
+  // Track previous sessionsToday to detect increase
+  const prevSessionsToday = useRef<number>(0); // initialize to 0 to detect first increase
+
+  // Trigger confetti only if sessionsToday has increased since last visit
+  useEffect(() => {
+    const current = gamification?.sessionsToday ?? 0;
+    if (current > prevSessionsToday.current) {
+      setShowSessionAnimation(true);
+      const timer = setTimeout(() => setShowSessionAnimation(false), 2000);
+    }
+    prevSessionsToday.current = current; // always update after checking
+  }, [gamification?.sessionsToday]);
 
   const streak = gamification?.streak ?? 0;
 
@@ -54,11 +73,6 @@ export default function Profile() {
       { id: 2, name: "Consistent", unlocked: streak >= 3 },
       { id: 3, name: "Expert", unlocked: streak >= 7 },
     ];
-    /*const extraBadges = (gamification?.badges ?? []).map((name, index) => ({
-      id: 100 + index,
-      name,
-      unlocked: true,
-    }));*/
     return [...builtIn];
   }, [streak, gamification]);
 
@@ -315,13 +329,32 @@ export default function Profile() {
               <Text style={[styles.cardTitle, { color: theme.text }]}>Sessions</Text>
             </View>
 
-            <View style={{ marginTop: 10 }}>
+            <View style={{ marginTop: 10, position: "relative" }}>
+              {/* Confetti Animation */}
+              {showSessionAnimation && (
+                <LottieView
+                  source={require("../assets/lottie/confetti.json")}
+                  autoPlay
+                  loop={false}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 10,
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+              )}
+
               {/* Today's Sessions Completed */}
               <View style={styles.streakBanner}>
                 <View>
                   <Text style={styles.streakLabel}>Today</Text>
                   <Text style={styles.streakValue}>
-                    {gamification?.sessionsToday ?? 0} {gamification?.sessionsToday === 1 ? "session" : "sessions"} ✅
+                    {gamification?.sessionsToday ?? 0} {gamification?.sessionsToday === 1 ? "session" : "sessions"}
                   </Text>
                 </View>
                 <View style={styles.streakIcon}>
@@ -339,9 +372,21 @@ export default function Profile() {
             </View>
 
             <View style={{ marginTop: 10 }}>
-              {/* Days Streak */}
-              <View style={styles.streakBanner}>
-                <View>
+              <View style={[styles.streakBanner, { position: "relative" }]}>
+                {streak > 0 && (
+                  <LottieView
+                    source={require("../assets/lottie/fire_glow.json")}
+                    autoPlay
+                    loop
+                    style={{
+                      position: "absolute",
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 14,
+                    }}
+                  />
+                )}
+                <View style={{ zIndex: 1 }}>
                   <Text style={styles.streakLabel}>Current Streak</Text>
                   <Text style={styles.streakValue}>
                     {streak} {streak === 1 ? "day" : "days"} 🔥
@@ -382,6 +427,7 @@ export default function Profile() {
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   body: { padding: 16 },
   card: { borderRadius: 14, padding: 16, borderWidth: 1, marginBottom: 16 },
@@ -394,7 +440,17 @@ const styles = StyleSheet.create({
   segmentRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   segment: { flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
   segmentText: { fontSize: 16 },
-  streakBanner: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, alignItems: "center", borderRadius: 14, padding: 16, borderWidth: 1, borderColor: "#FCD34D", backgroundColor: "#FEF3C7" },
+  streakBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    alignItems: "center",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#FCD34D",
+    backgroundColor: "#FEF3C7",
+  },
   streakLabel: { fontSize: 14, color: "#92400E", fontWeight: "600" },
   streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F", marginTop: 6 },
   streakIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center" },
