@@ -25,7 +25,7 @@
     "expo-notifications": "~0.32.12",
     "expo-router": "~6.0.14",
     "expo-status-bar": "~3.0.8",
-    "lottie-react-native": "^7.3.4",
+    "lottie-react-native": "~7.3.1",
     "lucide-react-native": "^0.553.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
