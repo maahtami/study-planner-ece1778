@@ -18,6 +18,7 @@ import { useTheme } from "../lib/ThemeContext";
 import { useAuth } from "../lib/AuthContext";
 import { useGlobalStyles } from "../styles/globalStyles";
 import { ArrowLeft } from "lucide-react-native";
+import { useSessions } from "../lib/SessionsContext";
 
 type AuthMode = "signIn" | "signUp";
 
@@ -55,7 +56,7 @@ export default function AuthScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
   const { user, cachedUser, initializing, signIn, signUp, signOut } = useAuth();
-
+  const { refreshSessions, clearSessions } = useSessions();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -84,8 +85,10 @@ export default function AuthScreen() {
     try {
       if (mode === "signIn") {
         await signIn(trimmedEmail, password);
+        await refreshSessions();
       } else {
         await signUp(trimmedEmail, password);
+        await refreshSessions();
       }
       setEmail("");
       setPassword("");
@@ -101,6 +104,11 @@ export default function AuthScreen() {
     setBusy(true);
     setError(null);
     try {
+      const uid = user?.uid ?? cachedUser?.uid;
+      if (uid) {
+        await clearSessions();
+      }
+
       await signOut();
     } catch (err) {
       setError(getErrorMessage(err));
