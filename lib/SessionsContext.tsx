@@ -22,6 +22,13 @@ import {
   recordSessionCompleted,
   GamificationState,
 } from "../lib/gamification";
+import {
+  saveSessionToFirestore,
+  updateSessionInFirestore,
+  deleteSessionFromFirestore,
+  saveGamificationToFirestore,
+} from "./firestoreData";
+import { useAuth } from "./AuthContext";
 
 type SessionsState = {
   sessions: Session[];
@@ -46,6 +53,7 @@ type SessionsContextValue = {
   updateSession: (id: string, patch: Partial<Session>) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
   restartSession: (id: string) => Promise<void>;
+  clearSessions: () => Promise<void>;
 
   // gamification API
   completeSession: (id: string) => Promise<{ gamification: GamificationState | null; session?: Session }>;
@@ -97,18 +105,33 @@ export function SessionsProvider({ children }: ProviderProps) {
 
   // gamification state
   const [gamification, setGamification] = useState<GamificationState | null>(null);
+  const { user, cachedUser } = useAuth();
+
+  const syncToFirestore = useCallback(
+    async (operation: string, task: (uid: string) => Promise<void>) => {
+      const uid = user?.uid ?? cachedUser?.uid ?? null;
+      if (!uid) return;
+      try {
+        await task(uid);
+      } catch (error) {
+        console.warn(`Firestosre sync failed (${operation})`, error);
+      }
+    },
+    [user, cachedUser]
+  );
 
   const refreshSessions = useCallback(async () => {
     dispatch({ type: "LOAD_START" });
     try {
-      const loaded = await getSessions();
+      const uid = user?.uid ?? cachedUser?.uid ?? null;
+      const loaded = await getSessions(uid);
       dispatch({ type: "LOAD_SUCCESS", payload: loaded });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to load study sessions at this time.";
       dispatch({ type: "LOAD_FAILURE", payload: message });
     }
-  }, []);
+  }, [user, cachedUser]);
 
   useEffect(() => {
     refreshSessions();
@@ -130,6 +153,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       dispatch({ type: "ADD_SESSION", payload: session });
       try {
         await saveSession(session);
+        await syncToFirestore("add session", (cloudUid) => saveSessionToFirestore(session, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to save the new study session.";
@@ -137,7 +161,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions]
+    [refreshSessions, syncToFirestore]
   );
 
   const updateSession = useCallback(
@@ -145,6 +169,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       dispatch({ type: "UPDATE_SESSION", payload: { id, patch } });
       try {
         await persistUpdateSession(id, patch);
+        await syncToFirestore("update session", (cloudUid) => updateSessionInFirestore(id, patch, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to update the study session.";
@@ -152,7 +177,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions]
+    [refreshSessions, syncToFirestore]
   );
 
   const deleteSession = useCallback(
@@ -160,6 +185,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       dispatch({ type: "DELETE_SESSION", payload: id });
       try {
         await persistDeleteSession(id);
+        await syncToFirestore("delete session", (cloudUid) => deleteSessionFromFirestore(id, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to delete the study session.";
@@ -167,7 +193,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions]
+    [refreshSessions, syncToFirestore]
   );
 
   const restartSession = useCallback(
@@ -175,6 +201,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       dispatch({ type: "UPDATE_SESSION", payload: { id, patch: { completed: false, completedAt: null } } });
       try {
         await persistUpdateSession(id, { completed: false, completedAt: null });
+        await syncToFirestore("restart session", (cloudUid) => updateSessionInFirestore(id, { completed: false, completedAt: null }, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to restart the study session.";
@@ -182,7 +209,27 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions]
+    [refreshSessions, syncToFirestore]
+  );
+
+  const clearSessions = useCallback(
+    async () => {
+      const uid = user?.uid ?? cachedUser?.uid ?? null;
+      if (!uid) return;
+      dispatch({ type: "LOAD_START" });
+      const sessionsToDelete = state.sessions.filter((session) => session.userId === uid);
+      for (const session of sessionsToDelete) {
+        try {
+          dispatch({ type: "DELETE_SESSION", payload: session.id });
+          await persistDeleteSession(session.id);
+        } catch (error) {
+          console.warn("Failed to delete session", error);
+        }
+      }
+      dispatch({ type: "LOAD_SUCCESS", payload: [] });
+      await refreshSessions();
+    },
+    [refreshSessions, state.sessions, deleteSession]
   );
 
   const completeSession = useCallback(
@@ -205,14 +252,18 @@ export function SessionsProvider({ children }: ProviderProps) {
         return { gamification: null, session: undefined };
       }
 
+      await syncToFirestore("complete session", (cloudUid) =>
+        updateSessionInFirestore(id, { completed: true, completedAt: completedAtIso }, cloudUid)
+      );
+
       try {
         const g = await recordSessionCompleted();
         setGamification(g);
+        await syncToFirestore("update gamification", (cloudUid) => saveGamificationToFirestore(g, cloudUid));
 
         try {
           const latestSessions = await getSessions();
           updatedSession = latestSessions.find((s) => s.id === id);
-          dispatch({ type: "LOAD_SUCCESS", payload: latestSessions });
         } catch (e) {
           console.warn("Warning: failed to reload sessions after completion", e);
         }
@@ -223,14 +274,13 @@ export function SessionsProvider({ children }: ProviderProps) {
         try {
           const latestSessions = await getSessions();
           updatedSession = latestSessions.find((s) => s.id === id);
-          dispatch({ type: "LOAD_SUCCESS", payload: latestSessions });
         } catch (err) {
           console.warn("Failed to fetch sessions after gamification failure", err);
         }
         return { gamification: null, session: updatedSession };
       }
     },
-    [refreshSessions]
+    [refreshSessions, syncToFirestore]
   );
 
   const refreshGamification = useCallback(async () => {
@@ -251,6 +301,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       addSession,
       updateSession,
       deleteSession,
+      clearSessions,
       completeSession,
       restartSession,
       refreshGamification,
@@ -266,6 +317,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       deleteSession,
       completeSession,
       restartSession,
+      clearSessions,
       refreshGamification,
       gamification,
     ]
