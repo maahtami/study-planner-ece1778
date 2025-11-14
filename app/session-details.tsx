@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity, ProgressBarAndroid, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  ProgressBarAndroid,
+  Platform,
+} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "../components/mid-fi/Button";
 import { ArrowLeft, Trash2, Edit3, Play, RotateCcw } from "lucide-react-native";
@@ -10,17 +18,30 @@ import { useGlobalStyles } from "../styles/globalStyles";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
-  // ❗ normalize id -> string
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const [progress, setProgress] = useState(0);
-  const { sessions, deleteSession, loading } = useSessions();
+  const { sessions, deleteSession, loading, completeSession, gamification } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
+
   const session = useMemo(
     () => sessions.find((current) => current.id === safeId),
     [sessions, safeId]
   );
+
+  // Count total completed sessions
+  const sessionsCompleted = useMemo(
+    () => sessions.filter((s) => s.completed).length,
+    [sessions]
+  );
+
+  // ✅ Sync progress with persisted completion state
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (session?.completed) {
+      setProgress(100);
+    }
+  }, [session]);
 
   useEffect(() => {
     if (!safeId) {
@@ -52,8 +73,19 @@ export default function SessionDetails() {
     ]);
   };
 
-  const handleStart = () => {
-    setProgress((prev) => (prev < 100 ? Math.min(prev + 25, 100) : 0));
+  const handleStart = async () => {
+    setProgress((prev) => {
+      const next = prev < 100 ? Math.min(prev + 25, 100) : 0;
+
+      // ✅ Complete session automatically when progress reaches 100%
+      if (next === 100 && safeId && !session?.completed) {
+        completeSession(safeId).catch((e) => {
+          console.error("Failed to complete session:", e);
+        });
+      }
+
+      return next;
+    });
   };
 
   const handleEdit = () => {
@@ -70,23 +102,20 @@ export default function SessionDetails() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[globalStyles.container]}>
-        <View style={[globalStyles.headerCard, { marginBottom: 12}]}>
-            <Text style={[globalStyles.headerText]}>
-              Session Details
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.backButton,
-                { backgroundColor: theme.background, borderColor: theme.border },
-              ]}
-              onPress={() => router.back()}
-            >
-              <ArrowLeft size={22} color={theme.text} />
-            </TouchableOpacity>
-          </View>
+        {/* Header */}
+        <View style={[globalStyles.headerCard, { marginBottom: 12 }]}>
+          <Text style={[globalStyles.headerText]}>Session Details</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={22} color={theme.text} />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.content}>
 
+          {/* Session Info */}
           <Text style={[styles.label, { color: theme.secondaryText }]}>Subject</Text>
           <Text style={[styles.value, { color: theme.text }]}>{session.subject}</Text>
 
@@ -96,65 +125,41 @@ export default function SessionDetails() {
           <Text style={[styles.label, { color: theme.secondaryText }]}>Date & Time</Text>
           <Text style={[styles.value, { color: theme.text }]}>{formattedDate}</Text>
 
-          {session.notes ? (
+          {session.notes && (
             <>
               <Text style={[styles.label, { color: theme.secondaryText }]}>Notes</Text>
               <Text style={[styles.value, { color: theme.text }]}>{session.notes}</Text>
             </>
-          ) : null}
+          )}
 
-          {session.repeat ? (
+          {session.repeat && (
             <>
               <Text style={[styles.label, { color: theme.secondaryText }]}>Repeat</Text>
-              <Text style={[styles.value, { color: theme.text }]}>Repeats weekly</Text>
+              <Text style={[styles.value, { color: theme.text }]}>{`Repeats weekly`}</Text>
             </>
-          ) : null}
+          )}
 
           <Text style={[styles.label, { color: theme.secondaryText }]}>Progress</Text>
           {Platform.OS === "ios" ? (
             <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${progress}%`, backgroundColor: theme.primary },
-                ]}
-              />
+              <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: theme.primary }]} />
             </View>
           ) : (
-            <ProgressBarAndroid
-              styleAttr="Horizontal"
-              indeterminate={false}
-              progress={progress / 100}
-              color={theme.primary}
-            />
+            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={progress / 100} color={theme.primary} />
           )}
-          <Text style={[styles.progressText, { color: theme.secondaryText }]}>
-            {progress}% complete
-          </Text>
+          <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
 
           <View style={styles.buttonRow}>
             <Button
               style={[styles.primaryButton, { backgroundColor: theme.primary }]}
               textStyle={{ color: theme.primaryText }}
-              icon={
-                progress === 100 ? (
-                  <RotateCcw size={18} color="#FFF" />
-                ) : (
-                  <Play size={18} color="#FFF" />
-                )
-              }
+              icon={progress === 100 ? <RotateCcw size={18} color="#FFF" /> : <Play size={18} color="#FFF" />}
               onPress={handleStart}
             >
               {progress === 100 ? "Restart Session" : "Start Session"}
             </Button>
 
-            <TouchableOpacity
-              style={[
-                styles.deleteButton,
-                { backgroundColor: "#EF4444" },
-              ]}
-              onPress={handleDelete}
-            >
+            <TouchableOpacity style={[styles.deleteButton, { backgroundColor: "#EF4444" }]} onPress={handleDelete}>
               <Trash2 size={18} color="#FFF" />
               <Text style={[styles.deleteText, { color: "#FFF" }]}>Delete</Text>
             </TouchableOpacity>
@@ -171,7 +176,6 @@ export default function SessionDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
   backButton: {
     position: "absolute",
     top: 12,
@@ -182,9 +186,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 4,
-    alignSelf: "flex-start",
   },
-  content: { 
+  content: {
     paddingHorizontal: 20,
     paddingBottom: 28,
     gap: 8,
@@ -193,7 +196,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
-   },
+  },
+  statsRow: { flexDirection: "row", gap: 16, marginBottom: 16 },
+  statCard: { flex: 1, padding: 12, borderRadius: 8, backgroundColor: "#f3f3f3", alignItems: "center" },
+  statLabel: { fontSize: 14, fontWeight: "500" },
+  statValue: { fontSize: 20, fontWeight: "700", marginTop: 4 },
   label: { fontSize: 14, marginTop: 12 },
   value: { fontSize: 18, fontWeight: "500" },
   progressBar: { height: 16, borderRadius: 5, marginTop: 8, overflow: "hidden" },

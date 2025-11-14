@@ -1,3 +1,4 @@
+// contexts/SessionsContext.tsx
 import React, {
   createContext,
   useCallback,
@@ -5,6 +6,7 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
+  useState,
 } from "react";
 import {
   getSessions,
@@ -13,6 +15,14 @@ import {
   deleteSession as persistDeleteSession,
 } from "./sessions";
 import { Session } from "../types";
+
+// --- gamification imports ---
+import {
+  loadState as loadGamificationState,
+  recordSessionCompleted,
+  GamificationState,
+} from "../lib/gamification";
+
 type SessionsState = {
   sessions: Session[];
   loading: boolean;
@@ -35,6 +45,11 @@ type SessionsContextValue = {
   addSession: (session: Session) => Promise<void>;
   updateSession: (id: string, patch: Partial<Session>) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
+
+  // gamification API
+  completeSession: (id: string) => Promise<{ gamification: GamificationState | null; session?: Session }>;
+  refreshGamification: () => Promise<void>;
+  gamification: GamificationState | null;
 };
 
 const SessionsContext = createContext<SessionsContextValue | undefined>(undefined);
@@ -79,6 +94,9 @@ type ProviderProps = {
 export function SessionsProvider({ children }: ProviderProps) {
   const [state, dispatch] = useReducer(sessionsReducer, initialState);
 
+  // gamification state
+  const [gamification, setGamification] = useState<GamificationState | null>(null);
+
   const refreshSessions = useCallback(async () => {
     dispatch({ type: "LOAD_START" });
     try {
@@ -95,17 +113,31 @@ export function SessionsProvider({ children }: ProviderProps) {
     refreshSessions();
   }, [refreshSessions]);
 
-  const addSession = useCallback(async (session: Session) => {
-    dispatch({ type: "ADD_SESSION", payload: session });
-    try {
-      await saveSession(session);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to save the new study session.";
-      dispatch({ type: "LOAD_FAILURE", payload: message });
-      await refreshSessions();
-    }
-  }, [refreshSessions]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const g = await loadGamificationState();
+        setGamification(g);
+      } catch (e) {
+        console.warn("Failed to load gamification state", e);
+      }
+    })();
+  }, []);
+
+  const addSession = useCallback(
+    async (session: Session) => {
+      dispatch({ type: "ADD_SESSION", payload: session });
+      try {
+        await saveSession(session);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to save the new study session.";
+        dispatch({ type: "LOAD_FAILURE", payload: message });
+        await refreshSessions();
+      }
+    },
+    [refreshSessions]
+  );
 
   const updateSession = useCallback(
     async (id: string, patch: Partial<Session>) => {
@@ -137,6 +169,63 @@ export function SessionsProvider({ children }: ProviderProps) {
     [refreshSessions]
   );
 
+  const completeSession = useCallback(
+    async (id: string) => {
+      let updatedSession: Session | undefined;
+      const completedAtIso = new Date().toISOString();
+
+      dispatch({
+        type: "UPDATE_SESSION",
+        payload: { id, patch: { completed: true, completedAt: completedAtIso } as Partial<Session> },
+      });
+
+      try {
+        await persistUpdateSession(id, { completed: true, completedAt: completedAtIso });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to persist session completion.";
+        dispatch({ type: "LOAD_FAILURE", payload: message });
+        await refreshSessions();
+        return { gamification: null, session: undefined };
+      }
+
+      try {
+        const g = await recordSessionCompleted();
+        setGamification(g);
+
+        try {
+          const latestSessions = await getSessions();
+          updatedSession = latestSessions.find((s) => s.id === id);
+          dispatch({ type: "LOAD_SUCCESS", payload: latestSessions });
+        } catch (e) {
+          console.warn("Warning: failed to reload sessions after completion", e);
+        }
+
+        return { gamification: g, session: updatedSession };
+      } catch (e) {
+        console.error("recordSessionCompleted failed", e);
+        try {
+          const latestSessions = await getSessions();
+          updatedSession = latestSessions.find((s) => s.id === id);
+          dispatch({ type: "LOAD_SUCCESS", payload: latestSessions });
+        } catch (err) {
+          console.warn("Failed to fetch sessions after gamification failure", err);
+        }
+        return { gamification: null, session: updatedSession };
+      }
+    },
+    [refreshSessions]
+  );
+
+  const refreshGamification = useCallback(async () => {
+    try {
+      const g = await loadGamificationState();
+      setGamification(g);
+    } catch (e) {
+      console.warn("Failed to refresh gamification", e);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       sessions: state.sessions,
@@ -146,18 +235,31 @@ export function SessionsProvider({ children }: ProviderProps) {
       addSession,
       updateSession,
       deleteSession,
+      completeSession,
+      refreshGamification,
+      gamification,
     }),
-    [state.sessions, state.loading, state.error, refreshSessions, addSession, updateSession, deleteSession]
+    [
+      state.sessions,
+      state.loading,
+      state.error,
+      refreshSessions,
+      addSession,
+      updateSession,
+      deleteSession,
+      completeSession,
+      refreshGamification,
+      gamification,
+    ]
   );
 
   return <SessionsContext.Provider value={value}>{children}</SessionsContext.Provider>;
 }
 
-export function useSessions(): SessionsContextValue {
+export function useSessions() {
   const context = useContext(SessionsContext);
   if (!context) {
     throw new Error("useSessions must be used within a SessionsProvider");
   }
   return context;
 }
-

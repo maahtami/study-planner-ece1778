@@ -1,3 +1,4 @@
+// app/profile.tsx
 import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
@@ -11,20 +12,23 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Bell, Palette, Flame, Trophy, Clock } from "lucide-react-native";
-import { computeStreak } from "../lib/sessions";
-import { useTheme } from "../lib/ThemeContext"; // ✅ global theme context
+import { useTheme } from "../lib/ThemeContext";
 import { TabBar } from "../components/mid-fi/TabBar";
 import { useGlobalStyles } from "../styles/globalStyles";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSessions } from "../lib/SessionsContext";
-import { ensureNotificationPermissions, scheduleDailyReminder, cancelReminder } from "../lib/notifications";
+import {
+  ensureNotificationPermissions,
+  scheduleDailyReminder,
+  cancelReminder,
+} from "../lib/notifications";
 import { saveSettings } from "../lib/settings";
 
 // helper functions
 function isoToDateAtToday(isoHM: string) {
   const [h, m] = isoHM.split(":").map((n) => parseInt(n, 10));
   const d = new Date();
-  d.setHours(h || 9, m || 0, 0, 0);
+  d.setHours(h || 9, m || 0, 0);
   return d;
 }
 function dateToISOHM(d: Date) {
@@ -35,27 +39,35 @@ function dateToISOHM(d: Date) {
 
 export default function Profile() {
   const { theme, settings, setSettings, toggleTheme } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const { gamification } = useSessions(); // ✅ use gamification state
+
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [draftReminderDate, setDraftReminderDate] = useState<Date | null>(null);
   const [notificationBusy, setNotificationBusy] = useState(false);
-  const globalStyles = useGlobalStyles();
-  const { sessions } = useSessions();
-  const streak = useMemo(() => computeStreak(sessions), [sessions]);
-  const badges = useMemo(
-    () => [
+
+  const streak = gamification?.streak ?? 0;
+
+  const badges = useMemo(() => {
+    const builtIn = [
       { id: 1, name: "Beginner", unlocked: streak >= 1 },
       { id: 2, name: "Consistent", unlocked: streak >= 3 },
       { id: 3, name: "Expert", unlocked: streak >= 7 },
-    ],
-    [streak]
-  );
+    ];
+    /*const extraBadges = (gamification?.badges ?? []).map((name, index) => ({
+      id: 100 + index,
+      name,
+      unlocked: true,
+    }));*/
+    return [...builtIn];
+  }, [streak, gamification]);
 
   const handleNotificationToggle = useCallback(
     async (enabled: boolean) => {
       if (!settings) return;
 
       setNotificationBusy(true);
-    try {
+      try {
         if (enabled) {
           const granted = await ensureNotificationPermissions();
           if (!granted) {
@@ -156,25 +168,17 @@ export default function Profile() {
         >
           <Text style={[globalStyles.headerText]}>Profile</Text>
         </View>
+
         <ScrollView style={styles.body}>
           {/* Notifications */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.cardHeaderRow}>
               <Bell size={18} color={theme.primary} />
-              <Text style={[styles.cardTitle, { color: theme.text }]}>
-                Notifications
-              </Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Notifications</Text>
               <View style={{ flex: 1 }} />
               <Switch
                 value={settings.notificationsEnabled}
-                onValueChange={(v) => {
-                  void handleNotificationToggle(v);
-                }}
+                onValueChange={(v) => void handleNotificationToggle(v)}
                 disabled={notificationBusy}
                 trackColor={{ true: theme.primary, false: "#D1D5DB" }}
                 thumbColor={settings.notificationsEnabled ? "#fff" : "#f4f4f5"}
@@ -184,9 +188,7 @@ export default function Profile() {
             <View style={styles.row}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Clock size={16} color={theme.secondaryText} />
-                <Text style={[styles.labelRow, { color: theme.text }]}>
-                  Reminder time
-                </Text>
+                <Text style={[styles.labelRow, { color: theme.text }]}>Reminder time</Text>
               </View>
 
               <TouchableOpacity
@@ -205,10 +207,7 @@ export default function Profile() {
                 ]}
               >
                 <Text style={[styles.pillText, { color: theme.text }]}>
-                  {reminderDate.toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+                  {reminderDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -221,13 +220,9 @@ export default function Profile() {
                   display={Platform.OS === "ios" ? "spinner" : "default"}
                   onChange={(_, d) => {
                     if (Platform.OS === "android") {
-                      if (d) {
-                        void applyReminderTime(d);
-                      }
+                      if (d) void applyReminderTime(d);
                       setShowTimePicker(false);
-                    } else if (d) {
-                      setDraftReminderDate(d);
-                    }
+                    } else if (d) setDraftReminderDate(d);
                   }}
                 />
                 {Platform.OS === "ios" && (
@@ -242,21 +237,14 @@ export default function Profile() {
                       <Text style={[styles.pickerButtonText, { color: theme.text }]}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[
-                        styles.pickerButton,
-                        { backgroundColor: theme.primary },
-                      ]}
+                      style={[styles.pickerButton, { backgroundColor: theme.primary }]}
                       onPress={() => {
-                        if (draftReminderDate) {
-                          void applyReminderTime(draftReminderDate);
-                        }
+                        if (draftReminderDate) void applyReminderTime(draftReminderDate);
                         setShowTimePicker(false);
                         setDraftReminderDate(null);
                       }}
                     >
-                      <Text style={[styles.pickerButtonText, { color: theme.background }]}>
-                        Done
-                      </Text>
+                      <Text style={[styles.pickerButtonText, { color: theme.background }]}>Done</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -265,12 +253,7 @@ export default function Profile() {
           </View>
 
           {/* Theme */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.cardHeaderRow}>
               <Palette size={18} color={theme.primary} />
               <Text style={[styles.cardTitle, { color: theme.text }]}>Theme</Text>
@@ -282,10 +265,7 @@ export default function Profile() {
                 style={[
                   styles.segment,
                   {
-                    backgroundColor:
-                      settings.theme === "light"
-                        ? theme.primary
-                        : theme.background,
+                    backgroundColor: settings.theme === "light" ? theme.primary : theme.background,
                     borderColor: theme.border,
                   },
                 ]}
@@ -294,10 +274,8 @@ export default function Profile() {
                   style={[
                     styles.segmentText,
                     {
-                      color:
-                        settings.theme === "light" ? "#fff" : theme.text,
-                      fontWeight:
-                        settings.theme === "light" ? "700" : "500",
+                      color: settings.theme === "light" ? "#fff" : theme.text,
+                      fontWeight: settings.theme === "light" ? "700" : "500",
                     },
                   ]}
                 >
@@ -310,10 +288,7 @@ export default function Profile() {
                 style={[
                   styles.segment,
                   {
-                    backgroundColor:
-                      settings.theme === "dark"
-                        ? theme.primary
-                        : theme.background,
+                    backgroundColor: settings.theme === "dark" ? theme.primary : theme.background,
                     borderColor: theme.border,
                   },
                 ]}
@@ -322,10 +297,8 @@ export default function Profile() {
                   style={[
                     styles.segmentText,
                     {
-                      color:
-                        settings.theme === "dark" ? "#fff" : theme.text,
-                      fontWeight:
-                        settings.theme === "dark" ? "700" : "500",
+                      color: settings.theme === "dark" ? "#fff" : theme.text,
+                      fontWeight: settings.theme === "dark" ? "700" : "500",
                     },
                   ]}
                 >
@@ -335,35 +308,52 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Sessions */}
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.cardHeaderRow}>
+              <Flame size={18} color={theme.primary} />
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Sessions</Text>
+            </View>
+
+            <View style={{ marginTop: 10 }}>
+              {/* Today's Sessions Completed */}
+              <View style={styles.streakBanner}>
+                <View>
+                  <Text style={styles.streakLabel}>Today</Text>
+                  <Text style={styles.streakValue}>
+                    {gamification?.sessionsToday ?? 0} {gamification?.sessionsToday === 1 ? "session" : "sessions"} ✅
+                  </Text>
+                </View>
+                <View style={styles.streakIcon}>
+                  <Flame size={24} color="#fff" />
+                </View>
+              </View>
+            </View>
+          </View>
+
           {/* Streaks & Badges */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.cardHeaderRow}>
               <Trophy size={18} color={theme.primary} />
-              <Text style={[styles.cardTitle, { color: theme.text }]}>
-                Streaks & Badges
-              </Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Streaks & Badges</Text>
             </View>
 
-            <View style={styles.streakBanner}>
-              <View>
-                <Text style={styles.streakLabel}>Current Streak</Text>
-                <Text style={styles.streakValue}>
-                  {streak} {streak === 1 ? "day" : "days"} 🔥
-                </Text>
-              </View>
-              <View style={styles.streakIcon}>
-                <Flame size={24} color="#fff" />
+            <View style={{ marginTop: 10 }}>
+              {/* Days Streak */}
+              <View style={styles.streakBanner}>
+                <View>
+                  <Text style={styles.streakLabel}>Current Streak</Text>
+                  <Text style={styles.streakValue}>
+                    {streak} {streak === 1 ? "day" : "days"} 🔥
+                  </Text>
+                </View>
+                <View style={styles.streakIcon}>
+                  <Flame size={24} color="#fff" />
+                </View>
               </View>
             </View>
 
-            <Text style={[styles.sectionLabel, { color: theme.text }]}>
-              Earned Badges
-            </Text>
+            <Text style={[styles.sectionLabel, { color: theme.text }]}>Earned Badges</Text>
             <View style={styles.badgesRow}>
               {badges.map((b) => (
                 <View key={b.id} style={styles.badgeItem}>
@@ -371,29 +361,13 @@ export default function Profile() {
                     style={[
                       styles.badgeCircle,
                       b.unlocked
-                        ? {
-                            borderColor: theme.primary,
-                            backgroundColor: "#EEF2FF",
-                          }
-                        : {
-                            borderStyle: "dashed",
-                            borderColor: theme.border,
-                            backgroundColor: theme.background,
-                            opacity: 0.5,
-                          },
+                        ? { borderColor: theme.primary, backgroundColor: "#EEF2FF" }
+                        : { borderStyle: "dashed", borderColor: theme.border, backgroundColor: theme.background, opacity: 0.5 },
                     ]}
                   >
-                    <Trophy
-                      size={26}
-                      color={b.unlocked ? theme.primary : theme.secondaryText}
-                    />
+                    <Trophy size={26} color={b.unlocked ? theme.primary : theme.secondaryText} />
                   </View>
-                  <Text
-                    style={[
-                      styles.badgeName,
-                      { color: b.unlocked ? theme.text : theme.secondaryText },
-                    ]}
-                  >
+                  <Text style={[styles.badgeName, { color: b.unlocked ? theme.text : theme.secondaryText }]}>
                     {b.name}
                   </Text>
                 </View>
@@ -402,7 +376,6 @@ export default function Profile() {
           </View>
         </ScrollView>
 
-        {/* ✅ Fixed: no onTabChange needed */}
         <TabBar activeTab="profile" />
       </SafeAreaView>
     </SafeAreaProvider>
@@ -411,12 +384,7 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   body: { padding: 16 },
-  card: {
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+  card: { borderRadius: 14, padding: 16, borderWidth: 1, marginBottom: 16 },
   cardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontSize: 18, fontWeight: "700" },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
@@ -424,61 +392,19 @@ const styles = StyleSheet.create({
   pill: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
   pillText: { fontSize: 14 },
   segmentRow: { flexDirection: "row", gap: 10, marginTop: 10 },
-  segment: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
+  segment: { flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
   segmentText: { fontSize: 16 },
-  streakBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-    alignItems: "center",
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#FCD34D",
-    backgroundColor: "#FEF3C7",
-  },
+  streakBanner: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, alignItems: "center", borderRadius: 14, padding: 16, borderWidth: 1, borderColor: "#FCD34D", backgroundColor: "#FEF3C7" },
   streakLabel: { fontSize: 14, color: "#92400E", fontWeight: "600" },
   streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F", marginTop: 6 },
-  streakIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#F59E0B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  streakIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center" },
   sectionLabel: { fontSize: 16, fontWeight: "700", marginTop: 10 },
   badgesRow: { flexDirection: "row", justifyContent: "space-around", marginTop: 12 },
   badgeItem: { alignItems: "center" },
-  badgeCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
+  badgeCircle: { width: 84, height: 84, borderRadius: 42, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   badgeName: { fontSize: 12, fontWeight: "600" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  pickerActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: 12,
-    paddingHorizontal: 4,
-  },
-  pickerButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-  },
+  pickerActions: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginTop: 12, paddingHorizontal: 4 },
+  pickerButton: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center" },
   pickerButtonText: { fontWeight: "600", fontSize: 16 },
 });
