@@ -6,6 +6,8 @@ export const LightTheme = {
     primary: "#2563EB",
     secondaryText: "#6B7280",
     primaryText: "#FFFFFF",
+    danger: "#DC2626",
+    dangerText: "#FFFFFF",
   };
   
   export const DarkTheme = {
@@ -16,6 +18,8 @@ export const LightTheme = {
     primary: "#3B82F6",
     secondaryText: "#9CA3AF",
     primaryText: "#FFFFFF",
+    danger: "#DC2626",
+    dangerText: "#FFFFFF",
   };
   
   export type ThemeType = typeof LightTheme;
