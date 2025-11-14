@@ -231,35 +231,6 @@ export default function Profile() {
               </Text>
             </TouchableOpacity>
           </View>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}
-          >
-            <View style={styles.cardHeaderRow}>
-              <UserPlus size={18} color={theme.primary} />
-              <Text style={[styles.cardTitle, { color: theme.text }]}>Account</Text>
-            </View>
-            <Text style={[styles.cardDescription, { color: theme.secondaryText }]}>
-              {isSignedIn ? 
-              <Text style={[styles.accountStatusText, { color: accountStatusColor }]}>
-                {accountStatusText}
-              </Text> 
-              : "Create an account to back up your progress and access your study planner across devices."}
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.accountButton,
-                { backgroundColor: theme.primary },
-              ]}
-              onPress={() => router.push("/auth")}
-            >
-              <Text style={[styles.accountButtonText, { color: theme.primaryText }]}>
-                {isSignedIn ? "Manage account" : "Sign in / Create account"}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Notifications */}
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
