@@ -19,9 +19,12 @@ import { Button } from "../components/mid-fi/Button";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function AddSession() {
   const { edit, id } = useLocalSearchParams();
+  const { user } = useAuth();
+  const userId = user?.uid;
   const safeId = useMemo(
     () => (Array.isArray(id) ? (id.length > 0 ? id[0] : undefined) : (id as string | undefined)),
     [id]
@@ -56,32 +59,40 @@ export default function AddSession() {
       Alert.alert("Missing info", "Please enter subject and duration.");
       return;
     }
-
-    if (isEditing && safeId) {
-      await updateSession(safeId, {
-        subject,
-        duration: Number(duration),
-        notes,
-        date: date ? date.toISOString() : null,
-        repeat,
-        completed: false,
-        completedAt: null,
-      });
-    } else {
-      const newSession = {
-        id: String(uuid.v4()),
-        subject,
-        duration: Number(duration),
-        notes,
-        date: date ? date.toISOString() : null,
-        repeat,
-        completed: false,
-        completedAt: null,
-      };
-      await addSession(newSession);
+    if (!date){
+      Alert.alert("Missing info", "Please select a date and time.");
     }
 
+    const savePromise = isEditing && safeId
+      ? updateSession(safeId, {
+          userId,
+          subject,
+          duration: Number(duration),
+          notes,
+          date: date ? date.toISOString() : null,
+          repeat,
+          completed: false,
+          completedAt: null,
+        })
+      : addSession({
+          id: String(uuid.v4()),
+          userId,
+          subject,
+          duration: Number(duration),
+          notes,
+          date: date ? date.toISOString() : null,
+          repeat,
+          completed: false,
+          completedAt: null,
+        });
+
     router.back(); // go home
+
+    try {
+      await savePromise;
+    } catch (err) {
+      console.warn("Failed to persist session", err);
+    }
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
