@@ -64,6 +64,8 @@ export default function AddSession() {
         notes,
         date: date ? date.toISOString() : null,
         repeat,
+        completed: false,
+        completedAt: null,
       });
     } else {
       const newSession = {
@@ -73,6 +75,8 @@ export default function AddSession() {
         notes,
         date: date ? date.toISOString() : null,
         repeat,
+        completed: false,
+        completedAt: null,
       };
       await addSession(newSession);
     }
