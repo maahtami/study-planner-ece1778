@@ -15,12 +15,13 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
+// import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const { sessions, deleteSession, loading, completeSession, gamification } = useSessions();
+  const { sessions, deleteSession, loading, completeSession, gamification, restartSession} = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
@@ -37,6 +38,8 @@ export default function SessionDetails() {
 
   // ✅ Sync progress with persisted completion state
   const [progress, setProgress] = useState(0);
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+  
   useEffect(() => {
     if (session?.completed) {
       setProgress(100);
@@ -75,13 +78,23 @@ export default function SessionDetails() {
 
   const handleStart = async () => {
     setProgress((prev) => {
+      // restart session if progress is 100
+      if (prev === 100 && safeId && session?.completed === true) {
+        restartSession(safeId);
+        return 0;
+      }
       const next = prev < 100 ? Math.min(prev + 25, 100) : 0;
 
       // ✅ Complete session automatically when progress reaches 100%
       if (next === 100 && safeId && !session?.completed) {
-        completeSession(safeId).catch((e) => {
-          console.error("Failed to complete session:", e);
-        });
+        completeSession(safeId)
+          .then(() => {
+            // Show completion animation when session is successfully completed
+            setShowCompletionAnimation(true);
+          })
+          .catch((e) => {
+            console.error("Failed to complete session:", e);
+          });
       }
 
       return next;
@@ -148,6 +161,12 @@ export default function SessionDetails() {
             <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={progress / 100} color={theme.primary} />
           )}
           <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
+          {session.completed && session.completedAt && (
+            <>
+              <Text style={[styles.label, { color: theme.secondaryText }]}>Completed At</Text>
+              <Text style={[styles.value, { color: theme.text }]}>{new Date(session.completedAt).toLocaleString()}</Text>
+            </>
+          )}
 
           <View style={styles.buttonRow}>
             <Button
@@ -170,6 +189,9 @@ export default function SessionDetails() {
             <Text style={[styles.editText, { color: theme.primary }]}>Edit Session</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Completion Animation */}
+
       </SafeAreaView>
     </SafeAreaProvider>
   );
