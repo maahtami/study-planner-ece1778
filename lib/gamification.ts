@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchGamificationFromFirestore } from "./firestoreData";
 
 export interface GamificationState {
   streak: number;                  // current consecutive day streak
@@ -14,9 +15,25 @@ const STORAGE_KEY = "@gamification_state";
 
 /**
  * loadState
- * Loads the gamification state from storage.
+ * Loads the gamification state from storage, with a cloud-first approach.
  */
-export async function loadState(): Promise<GamificationState> {
+export async function loadState(uid?: string | null): Promise<GamificationState> {
+  // 1. If a user is logged in, try to fetch from Firestore first.
+  if (uid) {
+    try {
+      const cloudState = await fetchGamificationFromFirestore(uid);
+      if (cloudState) {
+        // If cloud state exists, sync it locally and return it.
+        await saveState(cloudState);
+        return cloudState;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch gamification state from Firestore", e);
+      // Fall through to local storage on failure.
+    }
+  }
+
+  // 2. Fallback to local storage if not logged in or Firestore fails.
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -59,8 +76,8 @@ export async function saveState(state: GamificationState) {
  * Call this whenever a session is completed.
  * Updates streaks, session streak, badges, sessionsToday, and total sessions.
  */
-export async function recordSessionCompleted(): Promise<GamificationState> {
-  const state = await loadState();
+export async function recordSessionCompleted(uid?: string | null): Promise<GamificationState> {
+  const state = await loadState(uid);
   const now = new Date();
 
   // Reset sessionsToday if last completed session was on a different day
@@ -141,8 +158,8 @@ export async function recordSessionCompleted(): Promise<GamificationState> {
  * Call this whenever a session is "un-completed" (e.g. restarted).
  * Decrements session counters. Does not currently adjust streaks or badges.
  */
-export async function recordSessionUncompleted(): Promise<GamificationState> {
-  const state = await loadState();
+export async function recordSessionUncompleted(uid?: string | null): Promise<GamificationState> {
+  const state = await loadState(uid);
   const now = new Date();
 
   // Decrement total sessions, ensuring it doesn't go below zero

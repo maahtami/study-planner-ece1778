@@ -150,6 +150,22 @@ export function SessionsProvider({ children }: ProviderProps) {
     })();
   }, []);
 
+  // Effect to sync gamification state from Firestore when user logs in
+  useEffect(() => {
+    const syncGamification = async () => {
+      const uid = user?.uid ?? cachedUser?.uid ?? null;
+      if (uid) {
+        try {
+          const cloudState = await loadGamificationState(uid);
+          setGamification(cloudState);
+        } catch (e) {
+          console.warn("Failed to sync gamification state on auth change", e);
+        }
+      }
+    };
+    syncGamification();
+  }, [user, cachedUser]);
+
   const addSession = useCallback(
     async (session: Session) => {
       dispatch({ type: "ADD_SESSION", payload: session });
@@ -204,7 +220,8 @@ export function SessionsProvider({ children }: ProviderProps) {
       const sessionToRestart = state.sessions.find((s) => s.id === id);
       if (sessionToRestart?.completed) {
         try {
-          const g = await recordSessionUncompleted();
+          const uid = user?.uid ?? cachedUser?.uid ?? null;
+          const g = await recordSessionUncompleted(uid);
           setGamification(g);
           await syncToFirestore("update gamification", (cloudUid) => saveGamificationToFirestore(g, cloudUid));
         } catch (e) {
@@ -224,7 +241,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions, syncToFirestore, state.sessions]
+    [refreshSessions, syncToFirestore, state.sessions, user, cachedUser]
   );
 
   const rateSession = useCallback(
@@ -251,7 +268,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       dispatch({ type: "LOAD_SUCCESS", payload: [] });
       await refreshSessions();
     },
-    [refreshSessions, state.sessions, deleteSession]
+    [refreshSessions, state.sessions, deleteSession, user, cachedUser]
   );
 
   const completeSession = useCallback(
@@ -279,7 +296,8 @@ export function SessionsProvider({ children }: ProviderProps) {
       );
 
       try {
-        const g = await recordSessionCompleted();
+        const uid = user?.uid ?? cachedUser?.uid ?? null;
+        const g = await recordSessionCompleted(uid);
         setGamification(g);
         await syncToFirestore("update gamification", (cloudUid) => saveGamificationToFirestore(g, cloudUid));
 
@@ -302,7 +320,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         return { gamification: null, session: updatedSession };
       }
     },
-    [refreshSessions, syncToFirestore]
+    [refreshSessions, syncToFirestore, user, cachedUser]
   );
 
   const refreshGamification = useCallback(async () => {
