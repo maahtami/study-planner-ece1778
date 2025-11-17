@@ -130,8 +130,6 @@ export default function SessionDetails() {
           .then(() => {
             // Show completion animation when session is successfully completed
             setShowCompletionAnimation(true);
-            setShowFireworks(true);
-            setShowConfetti(true);
           })
           .catch((e) => {
             console.error("Failed to complete session:", e);
@@ -343,6 +341,10 @@ export default function SessionDetails() {
                 style={[styles.closeButton, { backgroundColor: theme.primary }]}
                 onPress={() => {
                   setShowQuoteModal(false);
+                  setTimeout(() => {
+                    setShowFireworks(true);
+                    setShowConfetti(true);
+                  }, 300);
                   // After rating (or not), user can close modal. If they rated, it's already saved.
                   // If they came back to the page later, the modal will show again if not rated.
                   // Maybe don't navigate back automatically. Let's see.
