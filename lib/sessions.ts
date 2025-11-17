@@ -7,15 +7,21 @@ const STORAGE_KEY = "study_sessions";
 /** Load all sessions (safe fallback to []) */
 export async function getSessions(uid: string | null = null): Promise<Session[]> {
   try {
-    let sessions: Session[] = [];
+    let firestoreSessions: Session[] = [];
     if (uid) {
-      sessions = await fetchSessionsFromFirestore(uid);
+      firestoreSessions = await fetchSessionsFromFirestore(uid);
     }
     const json = await AsyncStorage.getItem(STORAGE_KEY);
-    if (json) {
-      sessions = [...sessions, ...(JSON.parse(json) as Session[])];
+    const localSessions = json ? (JSON.parse(json) as Session[]) : [];
+
+    const allSessions = [...firestoreSessions, ...localSessions];
+    const sessionMap = new Map<string, Session>();
+
+    for (const session of allSessions) {
+      sessionMap.set(session.id, session);
     }
-    return sessions;
+
+    return Array.from(sessionMap.values());
   } catch (e) {
     console.error("getSessions failed:", e);
     return [];
