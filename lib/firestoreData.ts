@@ -3,6 +3,39 @@ import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firest
 
 import { Session, GamificationState } from "../types";
 
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1000;
+
+/**
+ * A wrapper function that adds retry logic with exponential backoff for Firestore operations.
+ * @param operation The async Firestore operation to execute.
+ */
+async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      const isNetworkError =
+        error.code === 'firestore/unavailable' ||
+        error.code === 'firestore/deadline-exceeded';
+
+      if (isNetworkError && attempt < MAX_RETRIES) {
+        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.warn(
+          `Firestore operation failed (attempt ${attempt}/${MAX_RETRIES}). Retrying in ${delay}ms...`,
+          error.code
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        console.error(`Firestore operation failed after ${attempt} attempts.`, error);
+        throw error;
+      }
+    }
+  }
+  throw new Error("Firestore operation failed after maximum retries.");
+}
+
+
 const USERS_COLLECTION = "users";
 const SESSIONS_SUBCOLLECTION = "sessions";
 const META_SUBCOLLECTION = "meta";
@@ -76,16 +109,20 @@ function mapSessionDoc(
 }
 
 export async function fetchSessionsFromFirestore(uid: string): Promise<Session[]> {
-  const userId = ensureUserId(uid);
-  const snapshot = await sessionsCollection(userId).orderBy("date", "desc").get();
-  return snapshot.docs.map((doc) => mapSessionDoc(doc));
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    const snapshot = await sessionsCollection(userId).orderBy("date", "desc").get();
+    return snapshot.docs.map((doc) => mapSessionDoc(doc));
+  });
 }
 
 export async function saveSessionToFirestore(session: Session, uid?: string): Promise<void> {
-  const userId = ensureUserId(uid);
-  const { id, ...rest } = session;
-  const payload: SessionWritePayload = rest;
-  await sessionsCollection(userId).doc(id).set(cleanData(payload));
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    const { id, ...rest } = session;
+    const payload: SessionWritePayload = rest;
+    await sessionsCollection(userId).doc(id).set(cleanData(payload));
+  });
 }
 
 export async function updateSessionInFirestore(
@@ -93,48 +130,58 @@ export async function updateSessionInFirestore(
   patch: Partial<Session>,
   uid?: string
 ): Promise<void> {
-  const userId = ensureUserId(uid);
-  const { id: _ignored, ...rest } = patch;
-  await sessionsCollection(userId).doc(id).set(cleanData(rest), { merge: true });
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    const { id: _ignored, ...rest } = patch;
+    await sessionsCollection(userId).doc(id).set(cleanData(rest), { merge: true });
+  });
 }
 
 export async function deleteSessionFromFirestore(id: string, uid?: string): Promise<void> {
-  const userId = ensureUserId(uid);
-  await sessionsCollection(userId).doc(id).delete();
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    await sessionsCollection(userId).doc(id).delete();
+  });
 }
 
 export async function fetchGamificationFromFirestore(uid?: string): Promise<GamificationState | null> {
-  const userId = ensureUserId(uid);
-  const snapshot = await gamificationDoc(userId).get();
-  if (!snapshot.exists) {
-    return null;
-  }
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    const snapshot = await gamificationDoc(userId).get();
+    if (!snapshot.exists) {
+      return null;
+    }
 
-  const data = snapshot.data();
-  if (!data) {
-    return null;
-  }
+    const data = snapshot.data();
+    if (!data) {
+      return null;
+    }
 
-  const { lastCompletedAt, ...rest } = data;
-  return {
-    ...(rest as Omit<GamificationState, "lastCompletedAt">),
-    lastCompletedAt: timestampToIso(lastCompletedAt) ?? undefined,
-  };
+    const { lastCompletedAt, ...rest } = data;
+    return {
+      ...(rest as Omit<GamificationState, "lastCompletedAt">),
+      lastCompletedAt: timestampToIso(lastCompletedAt) ?? undefined,
+    };
+  });
 }
 
 export async function saveGamificationToFirestore(
   state: GamificationState,
   uid?: string
 ): Promise<void> {
-  const userId = ensureUserId(uid);
-  await gamificationDoc(userId).set(cleanData(state), { merge: true });
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    await gamificationDoc(userId).set(cleanData(state), { merge: true });
+  });
 }
 
 export async function mergeGamificationInFirestore(
   patch: Partial<GamificationState>,
   uid?: string
 ): Promise<void> {
-  const userId = ensureUserId(uid);
-  await gamificationDoc(userId).set(cleanData(patch), { merge: true });
+  return withRetry(async () => {
+    const userId = ensureUserId(uid);
+    await gamificationDoc(userId).set(cleanData(patch), { merge: true });
+  });
 }
 
