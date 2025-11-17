@@ -54,6 +54,7 @@ type SessionsContextValue = {
   deleteSession: (id: string) => Promise<void>;
   restartSession: (id: string) => Promise<void>;
   clearSessions: () => Promise<void>;
+  rateSession: (id: string, rating: number) => Promise<void>;
 
   // gamification API
   completeSession: (id: string) => Promise<{ gamification: GamificationState | null; session?: Session }>;
@@ -198,10 +199,11 @@ export function SessionsProvider({ children }: ProviderProps) {
 
   const restartSession = useCallback(
     async (id: string) => {
-      dispatch({ type: "UPDATE_SESSION", payload: { id, patch: { completed: false, completedAt: null } } });
+      const patch = { completed: false, completedAt: null, rating: -1 };
+      dispatch({ type: "UPDATE_SESSION", payload: { id, patch } });
       try {
-        await persistUpdateSession(id, { completed: false, completedAt: null });
-        await syncToFirestore("restart session", (cloudUid) => updateSessionInFirestore(id, { completed: false, completedAt: null }, cloudUid));
+        await persistUpdateSession(id, patch);
+        await syncToFirestore("restart session", (cloudUid) => updateSessionInFirestore(id, patch, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to restart the study session.";
@@ -210,6 +212,13 @@ export function SessionsProvider({ children }: ProviderProps) {
       }
     },
     [refreshSessions, syncToFirestore]
+  );
+
+  const rateSession = useCallback(
+    async (id: string, rating: number) => {
+      await updateSession(id, { rating });
+    },
+    [updateSession]
   );
 
   const clearSessions = useCallback(
@@ -304,6 +313,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       clearSessions,
       completeSession,
       restartSession,
+      rateSession,
       refreshGamification,
       gamification,
     }),
@@ -317,6 +327,7 @@ export function SessionsProvider({ children }: ProviderProps) {
       deleteSession,
       completeSession,
       restartSession,
+      rateSession,
       clearSessions,
       refreshGamification,
       gamification,
