@@ -37,6 +37,7 @@ export default function AddSession() {
   const [date, setDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [repeat, setRepeat] = useState(false);
+  const [rating, setRating] = useState<number | null>(-1);
   const { sessions, addSession, updateSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
@@ -51,6 +52,7 @@ export default function AddSession() {
       setNotes(existing.notes || "");
       setDate(existing.date ? new Date(existing.date) : null);
       setRepeat(existing.repeat || false);
+      setRating(existing.rating || -1);
     }
   }, [isEditing, safeId, sessions]);
 
@@ -73,6 +75,7 @@ export default function AddSession() {
           repeat,
           completed: false,
           completedAt: null,
+          rating,
         })
       : addSession({
           id: String(uuid.v4()),
@@ -84,6 +87,7 @@ export default function AddSession() {
           repeat,
           completed: false,
           completedAt: null,
+          rating,
         });
 
     router.back(); // go home
