@@ -20,6 +20,7 @@ import { Session } from "../types";
 import {
   loadState as loadGamificationState,
   recordSessionCompleted,
+  recordSessionUncompleted,
   GamificationState,
 } from "../lib/gamification";
 import {
@@ -199,6 +200,18 @@ export function SessionsProvider({ children }: ProviderProps) {
 
   const restartSession = useCallback(
     async (id: string) => {
+      // First, check if the session was previously completed to adjust gamification
+      const sessionToRestart = state.sessions.find((s) => s.id === id);
+      if (sessionToRestart?.completed) {
+        try {
+          const g = await recordSessionUncompleted();
+          setGamification(g);
+          await syncToFirestore("update gamification", (cloudUid) => saveGamificationToFirestore(g, cloudUid));
+        } catch (e) {
+          console.warn("Failed to update gamification state on restart", e);
+        }
+      }
+
       const patch = { completed: false, completedAt: null, rating: -1 };
       dispatch({ type: "UPDATE_SESSION", payload: { id, patch } });
       try {
@@ -211,7 +224,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions, syncToFirestore]
+    [refreshSessions, syncToFirestore, state.sessions]
   );
 
   const rateSession = useCallback(

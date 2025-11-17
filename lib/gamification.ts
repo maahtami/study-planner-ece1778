@@ -137,6 +137,37 @@ export async function recordSessionCompleted(): Promise<GamificationState> {
 }
 
 /**
+ * recordSessionUncompleted
+ * Call this whenever a session is "un-completed" (e.g. restarted).
+ * Decrements session counters. Does not currently adjust streaks or badges.
+ */
+export async function recordSessionUncompleted(): Promise<GamificationState> {
+  const state = await loadState();
+  const now = new Date();
+
+  // Decrement total sessions, ensuring it doesn't go below zero
+  state.totalSessionsCompleted = Math.max(0, state.totalSessionsCompleted - 1);
+
+  // Check if the last completion was today and decrement if so
+  if (state.lastCompletedAt) {
+    const last = new Date(state.lastCompletedAt);
+    if (
+      last.getFullYear() === now.getFullYear() &&
+      last.getMonth() === now.getMonth() &&
+      last.getDate() === now.getDate()
+    ) {
+      state.sessionsToday = Math.max(0, (state.sessionsToday ?? 0) - 1);
+    }
+  }
+
+  // Note: This logic does not reverse streak calculation, as it can be complex.
+  // For this app's purpose, we'll just decrement the counters.
+
+  await saveState(state);
+  return state;
+}
+
+/**
  * resetGamification
  * Clears gamification state (useful for testing or logout)
  */
