@@ -80,18 +80,14 @@ export default function FocusScreen() {
     if (!safeId) return;
     setSelectedRating(rating);
     await rateSession(safeId, rating);
-    setTimeout(() => {
-      setShowQuoteModal(false);
-      router.back();
-    }, 500);
   };
 
   const handleComplete = async () => {
     if (!safeId) return;
     setUpdateCompletion(true);
-    await completeSession(safeId);
     await fetchQuote();
     setShowQuoteModal(true);
+    await completeSession(safeId);
   };
 
   const handleClose = () => {
@@ -160,8 +156,8 @@ export default function FocusScreen() {
                           <TouchableOpacity key={star} onPress={() => handleRateSession(star)}>
                             <Star
                               size={32}
-                              color={star <= selectedRating ? theme.primary : theme.border}
-                              fill={star <= selectedRating ? theme.primary : "transparent"}
+                              color={star <= selectedRating ? "#FFC700" : theme.border}
+                              fill={star <= selectedRating ? "#FFC700" : "transparent"}
                             />
                           </TouchableOpacity>
                         ))}
