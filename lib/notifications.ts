@@ -88,6 +88,43 @@ export async function scheduleDailyReminder(
   }
 }
 
+export async function scheduleSessionReminder(session: {
+  id: string;
+  subject: string;
+  date?: string | null;
+}): Promise<string | null> {
+  if (!session.date) return null;
+
+  const trigger = new Date(session.date);
+  trigger.setMinutes(trigger.getMinutes() - 5);
+
+  // Don't schedule reminders for past events
+  if (trigger.getTime() < Date.now()) {
+    return null;
+  }
+
+  const secondsUntilTrigger = (trigger.getTime() - Date.now()) / 1000;
+  console.log("secondsUntilTrigger", secondsUntilTrigger);
+
+  try {
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Study Session Reminder",
+        body: `Your study session for "${session.subject}" is starting in 5 minutes.`,
+        sound: "default",
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: secondsUntilTrigger > 0 ? secondsUntilTrigger : 1,
+      },
+    });
+    return notificationId;
+  } catch (error) {
+    console.error("Failed to schedule session reminder:", error);
+    return null;
+  }
+}
+
 export async function cancelReminder(identifier?: string | null) {
   if (!identifier) return;
   try {
