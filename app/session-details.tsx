@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ProgressBarAndroid,
   Platform,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "../components/mid-fi/Button";
@@ -16,6 +18,7 @@ import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
 // import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
+import { Quote } from "../types";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
@@ -39,6 +42,9 @@ export default function SessionDetails() {
   // ✅ Sync progress with persisted completion state
   const [progress, setProgress] = useState(0);
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   
   useEffect(() => {
     if (session?.completed) {
@@ -76,6 +82,28 @@ export default function SessionDetails() {
     ]);
   };
 
+  const fetchQuote = async () => {
+    setQuoteLoading(true);
+    try {
+      const response = await fetch(
+        "https://api.forismatic.com/api/1.0/?method=getQuote&format=json&lang=en"
+      );
+      const data = await response.json();
+      if (data) {
+        setQuote({ content: data.quoteText, author: data.quoteAuthor || "Unknown" });
+      }
+    } catch (error) {
+      console.error("Failed to fetch quote:", error);
+      // Fallback quote
+      setQuote({
+        content: "The secret of getting ahead is getting started.",
+        author: "Mark Twain",
+      });
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
   const handleStart = async () => {
     setProgress((prev) => {
       // restart session if progress is 100
@@ -91,12 +119,14 @@ export default function SessionDetails() {
           .then(() => {
             // Show completion animation when session is successfully completed
             setShowCompletionAnimation(true);
+            fetchQuote().then(() => {
+              setShowQuoteModal(true);
+            });
           })
           .catch((e) => {
             console.error("Failed to complete session:", e);
+            router.back(); // Go back even if quote fails
           });
-
-          router.back();
       }
 
       return next;
@@ -194,6 +224,32 @@ export default function SessionDetails() {
 
         {/* Completion Animation */}
 
+        <Modal visible={showQuoteModal} transparent={true} animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Session Complete!</Text>
+              {quoteLoading ? (
+                <ActivityIndicator size="large" color={theme.primary} />
+              ) : (
+                quote && (
+                  <>
+                    <Text style={[styles.quoteText, { color: theme.text }]}>"{quote.content}"</Text>
+                    <Text style={[styles.authorText, { color: theme.secondaryText }]}>- {quote.author}</Text>
+                  </>
+                )
+              )}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowQuoteModal(false);
+                  router.back();
+                }}
+              >
+                <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -251,4 +307,41 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   editText: { fontWeight: "600", fontSize: 16 },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  quoteText: {
+    fontSize: 18,
+    fontStyle: "italic",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  authorText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  closeButton: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
