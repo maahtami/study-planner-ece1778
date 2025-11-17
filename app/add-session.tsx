@@ -63,6 +63,7 @@ export default function AddSession() {
     }
     if (!date){
       Alert.alert("Missing info", "Please select a date and time.");
+      return;
     }
 
     const savePromise = isEditing && safeId
