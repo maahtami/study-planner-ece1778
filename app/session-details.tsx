@@ -107,34 +107,17 @@ export default function SessionDetails() {
     }
   };
 
-  const handleStart = async () => {
-    setProgress((prev) => {
-      // restart session if progress is 100
-      if (prev === 100 && safeId && session?.completed === true) {
-        setSelectedRating(-1);
-        restartSession(safeId);
-        return 0;
-      }
-      const next = prev < 100 ? Math.min(prev + 25, 100) : 0;
+  const handleStart = () => {
+    if (!safeId) return;
 
-      // ✅ Complete session automatically when progress reaches 100%
-      if (next === 100 && safeId && !session?.completed) {
-        fetchQuote().then(() => {
-          setShowQuoteModal(true);
-          completeSession(safeId)
-          .then(() => {
-            // Show completion animation when session is successfully completed
-            setShowCompletionAnimation(true);
-          })
-          .catch((e) => {
-            console.error("Failed to complete session:", e);
-            router.back(); // Go back even if quote fails
-          });
-        });
-      }
-
-      return next;
-    });
+    if (session?.completed) {
+      // This is the "Restart Session" case
+      restartSession(safeId);
+      setProgress(0);
+    } else {
+      // This is the "Start Session" case
+      router.push({ pathname: '/focus', params: { id: safeId } });
+    }
   };
 
   const handleEdit = () => {
