@@ -17,14 +17,12 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
-// import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
-import { Quote } from "../types";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const { sessions, deleteSession, loading, restartSession, rateSession } = useSessions();
+  const { sessions, deleteSession, loading, restartSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
