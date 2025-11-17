@@ -10,6 +10,8 @@ import {
   Switch,
   Platform,
   ScrollView,
+  Modal,
+  Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
@@ -36,6 +38,7 @@ export default function AddSession() {
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
   const [repeat, setRepeat] = useState(false);
   const [rating, setRating] = useState<number | null>(-1);
   const { sessions, addSession, updateSession } = useSessions();
@@ -101,8 +104,35 @@ export default function AddSession() {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowPicker(false);
-    if (selectedDate) setDate(selectedDate);
+    setShowPicker(Platform.OS === 'ios'); // Keep picker open on iOS for further changes
+    if (selectedDate) {
+      if (Platform.OS === 'android') {
+        if (pickerMode === 'date') {
+          // Date is selected, now show time picker
+          setDate(selectedDate);
+          setPickerMode('time');
+          setShowPicker(true); // Re-show for time
+        } else {
+          // Time is selected, combine with date and close
+          const newDate = new Date(date || new Date());
+          newDate.setHours(selectedDate.getHours());
+          newDate.setMinutes(selectedDate.getMinutes());
+          setDate(newDate);
+          setShowPicker(false); // All done, close
+        }
+      } else {
+        // On iOS, the picker handles both, so just update the date
+        setDate(selectedDate);
+      }
+    } else {
+      // User cancelled picker
+      setShowPicker(false);
+    }
+  };
+
+  const showDatePicker = () => {
+    setPickerMode('date');
+    setShowPicker(true);
   };
 
   return (
@@ -179,7 +209,7 @@ export default function AddSession() {
                 styles.datePicker,
                 { backgroundColor: theme.card, borderColor: theme.border },
               ]}
-              onPress={() => setShowPicker(true)}
+              onPress={showDatePicker}
             >
               <Text style={[styles.dateText, { color: theme.secondaryText }]}>
                 {date ? date.toLocaleString() : "Select date and time"}
@@ -187,13 +217,41 @@ export default function AddSession() {
               <Calendar size={20} color={theme.primaryText}/>
             </TouchableOpacity>
 
-            {showPicker && (
+            {showPicker && Platform.OS === 'android' && (
               <DateTimePicker
                 value={date || new Date()}
-                mode="datetime"
-                display={Platform.OS === "ios" ? "inline" : "default"}
+                mode={pickerMode}
+                display="default"
                 onChange={handleDateChange}
               />
+            )}
+
+            {Platform.OS === 'ios' && (
+              <Modal
+                transparent={true}
+                visible={showPicker}
+                animationType="fade"
+                onRequestClose={() => setShowPicker(false)}
+              >
+                <Pressable style={styles.modalBackdrop} onPress={() => setShowPicker(false)}>
+                  <Pressable style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                    <DateTimePicker
+                      value={date || new Date()}
+                      mode="datetime"
+                      display="inline"
+                      onChange={handleDateChange}
+                      textColor={theme.text}
+                    />
+                    <Button
+                      onPress={() => setShowPicker(false)}
+                      style={{ backgroundColor: theme.primary, marginTop: 12 }}
+                      textStyle={{ color: theme.primaryText }}
+                    >
+                      Done
+                    </Button>
+                  </Pressable>
+                </Pressable>
+              </Modal>
             )}
 
             {/* Repeat weekly toggle */}
@@ -290,5 +348,20 @@ const styles = StyleSheet.create({
   },
   headingSpacing: {
     marginBottom: 24,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  pickerContainer: {
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 20,
   },
 });
