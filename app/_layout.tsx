@@ -4,6 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import { ThemeProvider } from "../lib/ThemeContext";
 import { SessionsProvider } from "../lib/SessionsContext";
 import { registerNotificationResponseListener } from "../lib/notifications";
+import { AuthProvider } from "../lib/AuthContext";
 
 function NotificationBridge() {
   const router = useRouter();
@@ -26,11 +27,13 @@ function NotificationBridge() {
 
 export default function RootLayout() {
   return (
-    <SessionsProvider>
-      <ThemeProvider>
-        <NotificationBridge />
-        <Stack screenOptions={{ headerShown: false, animation: "fade", animationDuration: 10 }} />
-      </ThemeProvider>
-    </SessionsProvider>
+    <AuthProvider>
+      <SessionsProvider>
+        <ThemeProvider>
+          <NotificationBridge />
+          <Stack screenOptions={{ headerShown: false, animation: "fade", animationDuration: 10 }} />
+        </ThemeProvider>
+      </SessionsProvider>
+    </AuthProvider>
   );
 }

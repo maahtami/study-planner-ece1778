@@ -1,14 +1,27 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Session } from "../types";
+import { fetchSessionsFromFirestore } from "./firestoreData";
 
 const STORAGE_KEY = "study_sessions";
-
 /** Load all sessions (safe fallback to []) */
-export async function getSessions(): Promise<Session[]> {
+export async function getSessions(uid: string | null = null): Promise<Session[]> {
   try {
+    let firestoreSessions: Session[] = [];
+    if (uid) {
+      firestoreSessions = await fetchSessionsFromFirestore(uid);
+    }
     const json = await AsyncStorage.getItem(STORAGE_KEY);
-    return json ? (JSON.parse(json) as Session[]) : [];
+    const localSessions = json ? (JSON.parse(json) as Session[]) : [];
+
+    const allSessions = [...firestoreSessions, ...localSessions];
+    const sessionMap = new Map<string, Session>();
+
+    for (const session of allSessions) {
+      sessionMap.set(session.id, session);
+    }
+
+    return Array.from(sessionMap.values());
   } catch (e) {
     console.error("getSessions failed:", e);
     return [];

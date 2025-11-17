@@ -121,6 +121,7 @@ export default function HomeScreen() {
                     duration={session.duration}
                     notes={session.notes}
                     date={session.date}
+                    completed={session.completed}
                   />
                 </TouchableOpacity>
               ))

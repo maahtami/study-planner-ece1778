@@ -9,25 +9,30 @@ import {
   TouchableOpacity,
   ProgressBarAndroid,
   Platform,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "../components/mid-fi/Button";
-import { ArrowLeft, Trash2, Edit3, Play, RotateCcw } from "lucide-react-native";
+import { ArrowLeft, Trash2, Edit3, Play, RotateCcw, Star } from "lucide-react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
+// import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
+import { Quote } from "../types";
 
 // Lottie + Confetti + Haptics
 import LottieView from "lottie-react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import * as Haptics from "expo-haptics";
 
+
 export default function SessionDetails() {
   const params = useLocalSearchParams();
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const { sessions, deleteSession, loading, completeSession } = useSessions();
+  const { sessions, deleteSession, loading, completeSession, gamification, restartSession, rateSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
@@ -36,14 +41,24 @@ export default function SessionDetails() {
     [sessions, safeId]
   );
 
-  // Progress state
-  const [progress, setProgress] = useState(session?.completed ? 100 : 0);
+
 
   // Celebration states
   const [showFireworks, setShowFireworks] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Sync progress if session already completed
+
+  // Sync progress with persisted completion state
+  const [progress, setProgress] = useState(session?.completed ? 100 : 0);
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  
+
   useEffect(() => {
     if (session?.completed) setProgress(100);
   }, [session]);
@@ -57,11 +72,11 @@ export default function SessionDetails() {
   }, [safeId]);
 
   useEffect(() => {
-    if (safeId && !loading && !session) {
+    if (safeId && !loading && !session && !deleted) {
       Alert.alert("Error", "Session not found");
       router.back();
     }
-  }, [safeId, loading, session]);
+  }, [safeId, loading, session, deleted]);
 
   // Handlers
   const handleDelete = async () => {
@@ -73,15 +88,44 @@ export default function SessionDetails() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          setDeleted(true);
           await deleteSession(safeId);
-          router.replace("/");
+          router.navigate("/");
         },
       },
     ]);
   };
 
+  const fetchQuote = async () => {
+    setQuoteLoading(true);
+    try {
+      const response = await fetch(
+        "https://zenquotes.io/api/quotes/"
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setQuote({ content: data[0].q, author: data[0].a || "Unknown" });
+      }
+    } catch (error) {
+      console.error("Failed to fetch quote:", error);
+      // Fallback quote
+      setQuote({
+        content: "The secret of getting ahead is getting started.",
+        author: "Mark Twain",
+      });
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
   const handleStart = async () => {
     setProgress((prev) => {
+      // restart session if progress is 100
+      if (prev === 100 && safeId && session?.completed === true) {
+        setSelectedRating(-1);
+        restartSession(safeId);
+        return 0;
+      }
       const next = prev < 100 ? Math.min(prev + 25, 100) : 0;
 
       if (next === 100 && safeId && !session?.completed) {
@@ -101,6 +145,16 @@ export default function SessionDetails() {
   const handleEdit = () => {
     if (!safeId) return;
     router.push({ pathname: "/add-session", params: { edit: "true", id: safeId } });
+  };
+
+  const handleRateSession = async (rating: number) => {
+    if (!safeId) return;
+    setSelectedRating(rating);
+    await rateSession(safeId, rating);
+    setTimeout(() => {
+      // setShowQuoteModal(false);
+      // We don't need to navigate away, the main screen will update
+    }, 500);
   };
 
   if (!session) return null;
@@ -207,6 +261,28 @@ export default function SessionDetails() {
             />
           )}
           <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
+          {session.completed && session.completedAt && (
+            <>
+              <Text style={[styles.label, { color: theme.secondaryText }]}>Completed At</Text>
+              <Text style={[styles.value, { color: theme.text }]}>{new Date(session.completedAt).toLocaleString()}</Text>
+            </>
+          )}
+
+          {session.completed && session.rating && session.rating > 0 && (
+            <>
+              <Text style={[styles.label, { color: theme.secondaryText }]}>Focus Rating</Text>
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={24}
+                    color={star <= (session.rating || 0) ? "#FFC700" : theme.border}
+                    fill={star <= (session.rating || 0) ? "#FFC700" : "transparent"}
+                  />
+                ))}
+              </View>
+            </>
+          )}
 
           {/* Buttons */}
           <View style={styles.buttonRow}>
@@ -230,6 +306,54 @@ export default function SessionDetails() {
             <Text style={[styles.editText, { color: theme.primary }]}>Edit Session</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Completion Animation */}
+
+        <Modal visible={showQuoteModal} transparent={true} animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Session Complete!</Text>
+              {quoteLoading ? (
+                <ActivityIndicator size="large" color={theme.primary} />
+              ) : (
+                quote && (
+                  <>
+                    <Text style={[styles.quoteText, { color: theme.text }]}>"{quote.content}"</Text>
+                    {quote.author && (
+                      <Text style={[styles.authorText, { color: theme.secondaryText }]}>- {quote.author}</Text>
+                    )}
+                    <View style={[styles.ratingContainer, { borderColor: theme.border }]}>
+                      <Text style={[styles.ratingPrompt, { color: theme.text }]}>Rate your focus:</Text>
+                      <View style={styles.starsContainer}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <TouchableOpacity key={star} onPress={() => handleRateSession(star)}>
+                            <Star
+                              size={32}
+                              color={star <= selectedRating ? theme.primary : theme.border}
+                              fill={star <= selectedRating ? theme.primary : "transparent"}
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  </>
+                )
+              )}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowQuoteModal(false);
+                  // After rating (or not), user can close modal. If they rated, it's already saved.
+                  // If they came back to the page later, the modal will show again if not rated.
+                  // Maybe don't navigate back automatically. Let's see.
+                  // router.back();
+                }}
+              >
+                <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -283,4 +407,56 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   editText: { fontWeight: "600", fontSize: 16 },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  quoteText: {
+    fontSize: 18,
+    fontStyle: "italic",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  authorText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  ratingContainer: {
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 24,
+  },
+  ratingPrompt: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  starsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  closeButton: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });

@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Bell, Palette, Flame, Trophy, Clock } from "lucide-react-native";
+import { Bell, Palette, Flame, Trophy, Clock, UserPlus, CheckCircle2 } from "lucide-react-native";
 import { useTheme } from "../lib/ThemeContext";
 import { TabBar } from "../components/mid-fi/TabBar";
 import { useGlobalStyles } from "../styles/globalStyles";
@@ -23,6 +23,8 @@ import {
   cancelReminder,
 } from "../lib/notifications";
 import { saveSettings } from "../lib/settings";
+import { useRouter } from "expo-router";
+import { useAuth } from "../lib/AuthContext";
 
 // Lottie
 import LottieView from "lottie-react-native";
@@ -48,6 +50,9 @@ export default function Profile() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [draftReminderDate, setDraftReminderDate] = useState<Date | null>(null);
   const [notificationBusy, setNotificationBusy] = useState(false);
+  const { sessions } = useSessions();
+  const router = useRouter();
+  const { user: authUser, cachedUser, initializing: authInitializing, isSignedIn } = useAuth();
 
   // Confetti animation state
   const [showSessionAnimation, setShowSessionAnimation] = useState(false);
@@ -66,9 +71,8 @@ export default function Profile() {
   }, [gamification?.sessionsToday]);
 
   const streak = gamification?.streak ?? 0;
-
   const badges = useMemo(() => {
-    const builtIn = [
+      const builtIn = [
       { id: 1, name: "Beginner", unlocked: streak >= 1 },
       { id: 2, name: "Consistent", unlocked: streak >= 3 },
       { id: 3, name: "Expert", unlocked: streak >= 7 },
@@ -169,6 +173,19 @@ export default function Profile() {
   }
 
   const reminderDate = isoToDateAtToday(settings.reminderISOTime);
+  const accountEmail = authUser?.email ?? cachedUser?.email ?? "";
+  const accountStatusText = authInitializing
+    ? "Checking sign-in status…"
+    : isSignedIn
+        ? accountEmail
+          ? `${accountEmail}`
+          : "Signed in"
+        : "You're not signed in yet.";
+  const accountStatusColor = authInitializing
+    ? theme.secondaryText
+    : isSignedIn
+      ? theme.primary
+      : theme.secondaryText;
 
   return (
     <SafeAreaProvider>
@@ -184,6 +201,37 @@ export default function Profile() {
         </View>
 
         <ScrollView style={styles.body}>
+          {/* Account */}
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <View style={styles.cardHeaderRow}>
+              <UserPlus size={18} color={theme.primary} />
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Account</Text>
+            </View>
+            <Text style={[styles.cardDescription, { color: theme.secondaryText }]}>
+              {isSignedIn ? 
+              <Text style={[styles.accountStatusText, { color: accountStatusColor }]}>
+                {accountStatusText}
+              </Text> 
+              : "Create an account to back up your progress and access your study planner across devices."}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.accountButton,
+                { backgroundColor: theme.primary },
+              ]}
+              onPress={() => router.push("/auth")}
+            >
+              <Text style={[styles.accountButtonText, { color: theme.primaryText }]}>
+                {isSignedIn ? "Manage account" : "Sign in / Create account"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Notifications */}
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.cardHeaderRow}>
@@ -351,7 +399,7 @@ export default function Profile() {
 
               {/* Today's Sessions Completed */}
               <View style={styles.streakBanner}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.streakLabel}>Today</Text>
                   <Text style={styles.streakValue}>
                     {gamification?.sessionsToday ?? 0} {gamification?.sessionsToday === 1 ? "session" : "sessions"}
@@ -452,7 +500,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
   },
   streakLabel: { fontSize: 14, color: "#92400E", fontWeight: "600" },
-  streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F", marginTop: 6 },
+  streakValueContainer: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  streakValue: { fontSize: 28, fontWeight: "800", color: "#78350F" },
   streakIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center" },
   sectionLabel: { fontSize: 16, fontWeight: "700", marginTop: 10 },
   badgesRow: { flexDirection: "row", justifyContent: "space-around", marginTop: 12 },
@@ -460,6 +509,26 @@ const styles = StyleSheet.create({
   badgeCircle: { width: 84, height: 84, borderRadius: 42, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   badgeName: { fontSize: 12, fontWeight: "600" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  cardDescription: {
+    fontSize: 15,
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  accountStatusText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  accountButton: {
+    marginTop: 14,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  accountButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
   pickerActions: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginTop: 12, paddingHorizontal: 4 },
   pickerButton: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center" },
   pickerButtonText: { fontWeight: "600", fontSize: 16 },
