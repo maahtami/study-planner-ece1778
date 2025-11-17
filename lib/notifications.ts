@@ -26,11 +26,6 @@ async function ensureAndroidChannel() {
 }
 
 export async function ensureNotificationPermissions(): Promise<boolean> {
-  if (!Device.isDevice) {
-    console.warn("Push notifications require a physical device.");
-    return false;
-  }
-
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -81,7 +76,7 @@ export async function scheduleDailyReminder(
       content: {
         title: "Study Reminder",
         body: "Time to review your study plan and stay on track.",
-        data: { screen: "/index" },
+        data: { screen: "/" },
         sound: "default",
       },
       trigger,
