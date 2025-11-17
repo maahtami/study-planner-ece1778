@@ -1,4 +1,6 @@
+// app/session-details.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { Dimensions } from "react-native";
 import {
   View,
   Text,
@@ -16,11 +18,16 @@ import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
 
+// Lottie + Confetti + Haptics
+import LottieView from "lottie-react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import * as Haptics from "expo-haptics";
+
 export default function SessionDetails() {
   const params = useLocalSearchParams();
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const { sessions, deleteSession, loading, completeSession, gamification } = useSessions();
+  const { sessions, deleteSession, loading, completeSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
@@ -29,20 +36,19 @@ export default function SessionDetails() {
     [sessions, safeId]
   );
 
-  // Count total completed sessions
-  const sessionsCompleted = useMemo(
-    () => sessions.filter((s) => s.completed).length,
-    [sessions]
-  );
+  // Progress state
+  const [progress, setProgress] = useState(session?.completed ? 100 : 0);
 
-  // ✅ Sync progress with persisted completion state
-  const [progress, setProgress] = useState(0);
+  // Celebration states
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Sync progress if session already completed
   useEffect(() => {
-    if (session?.completed) {
-      setProgress(100);
-    }
+    if (session?.completed) setProgress(100);
   }, [session]);
 
+  // Validate session existence
   useEffect(() => {
     if (!safeId) {
       Alert.alert("Error", "Missing session id");
@@ -57,6 +63,7 @@ export default function SessionDetails() {
     }
   }, [safeId, loading, session]);
 
+  // Handlers
   const handleDelete = async () => {
     if (!safeId) return;
 
@@ -77,11 +84,14 @@ export default function SessionDetails() {
     setProgress((prev) => {
       const next = prev < 100 ? Math.min(prev + 25, 100) : 0;
 
-      // ✅ Complete session automatically when progress reaches 100%
       if (next === 100 && safeId && !session?.completed) {
-        completeSession(safeId).catch((e) => {
-          console.error("Failed to complete session:", e);
-        });
+        // Complete the session
+        completeSession(safeId).catch((e) => console.error(e));
+
+        // Trigger celebration
+        setShowFireworks(true);
+        setShowConfetti(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }
 
       return next;
@@ -102,6 +112,51 @@ export default function SessionDetails() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[globalStyles.container]}>
+        {/* Fireworks & Confetti */}
+        {showFireworks && (
+          <LottieView
+            source={require("../assets/lottie/fireworks.json")}
+            autoPlay
+            loop={false}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 999,
+              // <-- Allow touches to pass through
+              pointerEvents: "none",
+            }}
+            onAnimationFinish={() => setShowFireworks(false)}
+          />
+        )}
+
+        {showConfetti && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 999,
+            }}
+          >
+            <ConfettiCannon
+              count={100}
+              origin={{ x: 0.5 * Dimensions.get("window").width, y: 0.5 * Dimensions.get("window").height }}
+              fadeOut
+              autoStart
+              fallSpeed={1000}
+              onAnimationEnd={() => setShowConfetti(false)}
+            />
+          </View>
+        )}
+
         {/* Header */}
         <View style={[globalStyles.headerCard, { marginBottom: 12 }]}>
           <Text style={[globalStyles.headerText]}>Session Details</Text>
@@ -114,8 +169,6 @@ export default function SessionDetails() {
         </View>
 
         <View style={styles.content}>
-
-          {/* Session Info */}
           <Text style={[styles.label, { color: theme.secondaryText }]}>Subject</Text>
           <Text style={[styles.value, { color: theme.text }]}>{session.subject}</Text>
 
@@ -139,16 +192,23 @@ export default function SessionDetails() {
             </>
           )}
 
+          {/* Progress */}
           <Text style={[styles.label, { color: theme.secondaryText }]}>Progress</Text>
           {Platform.OS === "ios" ? (
             <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
               <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: theme.primary }]} />
             </View>
           ) : (
-            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={progress / 100} color={theme.primary} />
+            <ProgressBarAndroid
+              styleAttr="Horizontal"
+              indeterminate={false}
+              progress={progress / 100}
+              color={theme.primary}
+            />
           )}
           <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
 
+          {/* Buttons */}
           <View style={styles.buttonRow}>
             <Button
               style={[styles.primaryButton, { backgroundColor: theme.primary }]}
@@ -197,10 +257,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  statsRow: { flexDirection: "row", gap: 16, marginBottom: 16 },
-  statCard: { flex: 1, padding: 12, borderRadius: 8, backgroundColor: "#f3f3f3", alignItems: "center" },
-  statLabel: { fontSize: 14, fontWeight: "500" },
-  statValue: { fontSize: 20, fontWeight: "700", marginTop: 4 },
   label: { fontSize: 14, marginTop: 12 },
   value: { fontSize: 18, fontWeight: "500" },
   progressBar: { height: 16, borderRadius: 5, marginTop: 8, overflow: "hidden" },
