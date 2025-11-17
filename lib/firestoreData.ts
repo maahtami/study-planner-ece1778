@@ -1,8 +1,7 @@
 import auth from "@react-native-firebase/auth";
 import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
 
-import { Session } from "../types";
-import { GamificationState } from "./gamification";
+import { Session, GamificationState } from "../types";
 
 const USERS_COLLECTION = "users";
 const SESSIONS_SUBCOLLECTION = "sessions";
