@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "../components/mid-fi/Button";
-import { ArrowLeft, Trash2, Edit3, Play, RotateCcw } from "lucide-react-native";
+import { ArrowLeft, Trash2, Edit3, Play, RotateCcw, Star } from "lucide-react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
@@ -24,7 +24,7 @@ export default function SessionDetails() {
   const params = useLocalSearchParams();
   const safeId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
 
-  const { sessions, deleteSession, loading, completeSession, gamification, restartSession} = useSessions();
+  const { sessions, deleteSession, loading, completeSession, gamification, restartSession, rateSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
@@ -45,6 +45,8 @@ export default function SessionDetails() {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
   
   useEffect(() => {
     if (session?.completed) {
@@ -60,11 +62,11 @@ export default function SessionDetails() {
   }, [safeId]);
 
   useEffect(() => {
-    if (safeId && !loading && !session) {
+    if (safeId && !loading && !session && !deleted) {
       Alert.alert("Error", "Session not found");
       router.back();
     }
-  }, [safeId, loading, session]);
+  }, [safeId, loading, session, deleted]);
 
   const handleDelete = async () => {
     if (!safeId) return;
@@ -75,8 +77,9 @@ export default function SessionDetails() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          setDeleted(true);
           await deleteSession(safeId);
-          router.back();
+          router.navigate("/");
         },
       },
     ]);
@@ -86,11 +89,11 @@ export default function SessionDetails() {
     setQuoteLoading(true);
     try {
       const response = await fetch(
-        "https://api.forismatic.com/api/1.0/?method=getQuote&format=json&lang=en"
+        "https://zenquotes.io/api/quotes/"
       );
       const data = await response.json();
-      if (data) {
-        setQuote({ content: data.quoteText, author: data.quoteAuthor || "Unknown" });
+      if (data && data.length > 0) {
+        setQuote({ content: data[0].q, author: data[0].a || "Unknown" });
       }
     } catch (error) {
       console.error("Failed to fetch quote:", error);
@@ -108,6 +111,7 @@ export default function SessionDetails() {
     setProgress((prev) => {
       // restart session if progress is 100
       if (prev === 100 && safeId && session?.completed === true) {
+        setSelectedRating(-1);
         restartSession(safeId);
         return 0;
       }
@@ -115,18 +119,18 @@ export default function SessionDetails() {
 
       // ✅ Complete session automatically when progress reaches 100%
       if (next === 100 && safeId && !session?.completed) {
-        completeSession(safeId)
+        fetchQuote().then(() => {
+          setShowQuoteModal(true);
+          completeSession(safeId)
           .then(() => {
             // Show completion animation when session is successfully completed
             setShowCompletionAnimation(true);
-            fetchQuote().then(() => {
-              setShowQuoteModal(true);
-            });
           })
           .catch((e) => {
             console.error("Failed to complete session:", e);
             router.back(); // Go back even if quote fails
           });
+        });
       }
 
       return next;
@@ -136,6 +140,16 @@ export default function SessionDetails() {
   const handleEdit = () => {
     if (!safeId) return;
     router.push({ pathname: "/add-session", params: { edit: "true", id: safeId } });
+  };
+
+  const handleRateSession = async (rating: number) => {
+    if (!safeId) return;
+    setSelectedRating(rating);
+    await rateSession(safeId, rating);
+    setTimeout(() => {
+      // setShowQuoteModal(false);
+      // We don't need to navigate away, the main screen will update
+    }, 500);
   };
 
   if (!session) return null;
@@ -200,6 +214,22 @@ export default function SessionDetails() {
             </>
           )}
 
+          {session.completed && session.rating && session.rating > 0 && (
+            <>
+              <Text style={[styles.label, { color: theme.secondaryText }]}>Focus Rating</Text>
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={24}
+                    color={star <= (session.rating || 0) ? "#FFC700" : theme.border}
+                    fill={star <= (session.rating || 0) ? "#FFC700" : "transparent"}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+
           <View style={styles.buttonRow}>
             <Button
               style={[styles.primaryButton, { backgroundColor: theme.primary }]}
@@ -234,7 +264,23 @@ export default function SessionDetails() {
                 quote && (
                   <>
                     <Text style={[styles.quoteText, { color: theme.text }]}>"{quote.content}"</Text>
-                    <Text style={[styles.authorText, { color: theme.secondaryText }]}>- {quote.author}</Text>
+                    {quote.author && (
+                      <Text style={[styles.authorText, { color: theme.secondaryText }]}>- {quote.author}</Text>
+                    )}
+                    <View style={[styles.ratingContainer, { borderColor: theme.border }]}>
+                      <Text style={[styles.ratingPrompt, { color: theme.text }]}>Rate your focus:</Text>
+                      <View style={styles.starsContainer}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <TouchableOpacity key={star} onPress={() => handleRateSession(star)}>
+                            <Star
+                              size={32}
+                              color={star <= selectedRating ? theme.primary : theme.border}
+                              fill={star <= selectedRating ? theme.primary : "transparent"}
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
                   </>
                 )
               )}
@@ -242,7 +288,10 @@ export default function SessionDetails() {
                 style={[styles.closeButton, { backgroundColor: theme.primary }]}
                 onPress={() => {
                   setShowQuoteModal(false);
-                  router.back();
+                  // After rating (or not), user can close modal. If they rated, it's already saved.
+                  // If they came back to the page later, the modal will show again if not rated.
+                  // Maybe don't navigate back automatically. Let's see.
+                  // router.back();
                 }}
               >
                 <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
@@ -334,6 +383,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginBottom: 24,
+  },
+  ratingContainer: {
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 24,
+  },
+  ratingPrompt: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  starsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center",
+    marginBottom: 8,
   },
   closeButton: {
     borderRadius: 10,
