@@ -19,6 +19,9 @@ import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
 // import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
 import { Quote } from "../types";
+import LottieView from "lottie-react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import { Dimensions } from "react-native";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
@@ -47,6 +50,8 @@ export default function SessionDetails() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   
   useEffect(() => {
     if (session?.completed) {
@@ -125,6 +130,8 @@ export default function SessionDetails() {
           .then(() => {
             // Show completion animation when session is successfully completed
             setShowCompletionAnimation(true);
+            setShowFireworks(true);
+            setShowConfetti(true);
           })
           .catch((e) => {
             console.error("Failed to complete session:", e);
@@ -161,6 +168,54 @@ export default function SessionDetails() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[globalStyles.container]}>
+        {/*  Fireworks Animation */}
+        {showFireworks && (
+          <LottieView
+            source={require("../assets/lottie/fireworks.json")}
+            autoPlay
+            loop={false}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 999,
+              pointerEvents: "none",
+            }}
+            onAnimationFinish={() => setShowFireworks(false)}
+          />
+        )}
+
+        {/* Confetti Animation */}
+        {showConfetti && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 999,
+            }}
+          >
+            <ConfettiCannon
+              count={100}
+              origin={{
+                x: 0.5 * Dimensions.get("window").width,
+                y: 0.5 * Dimensions.get("window").height,
+              }}
+              fadeOut
+              autoStart
+              fallSpeed={1000} // lower = slower fall
+              onAnimationEnd={() => setShowConfetti(false)}
+            />
+          </View>
+        )}
+        
         {/* Header */}
         <View style={[globalStyles.headerCard, { marginBottom: 12 }]}>
           <Text style={[globalStyles.headerText]}>Session Details</Text>
