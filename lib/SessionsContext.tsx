@@ -21,8 +21,12 @@ import {
   loadState as loadGamificationState,
   recordSessionCompleted,
   recordSessionUncompleted,
-  GamificationState,
 } from "../lib/gamification";
+import {
+  scheduleSessionReminder,
+  cancelReminder as cancelSessionReminder,
+  ensureNotificationPermissions,
+} from "../lib/notifications";
 import {
   saveSessionToFirestore,
   updateSessionInFirestore,
@@ -30,12 +34,8 @@ import {
   saveGamificationToFirestore,
 } from "./firestoreData";
 import { useAuth } from "./AuthContext";
-
-type SessionsState = {
-  sessions: Session[];
-  loading: boolean;
-  error: string | null;
-};
+import { GamificationState, SessionsState } from "../types";
+import { Alert } from "react-native";
 
 type SessionsAction =
   | { type: "LOAD_START" }
@@ -168,10 +168,25 @@ export function SessionsProvider({ children }: ProviderProps) {
 
   const addSession = useCallback(
     async (session: Session) => {
-      dispatch({ type: "ADD_SESSION", payload: session });
+      // First, ask for notification permissions if adding a session with a future date
+      if (session.date && new Date(session.date) > new Date()) {
+        const granted = await ensureNotificationPermissions();
+        if (!granted) {
+          Alert.alert(
+            "Permission Required",
+            "Please enable notifications to receive reminders for your sessions."
+          );
+        }
+      }
+
+      // Schedule notification
+      const notificationId = await scheduleSessionReminder(session);
+      const sessionWithNotification = { ...session, scheduledNotificationId: notificationId };
+
+      dispatch({ type: "ADD_SESSION", payload: sessionWithNotification });
       try {
-        await saveSession(session);
-        await syncToFirestore("add session", (cloudUid) => saveSessionToFirestore(session, cloudUid));
+        await saveSession(sessionWithNotification);
+        await syncToFirestore("add session", (cloudUid) => saveSessionToFirestore(sessionWithNotification, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to save the new study session.";
@@ -184,10 +199,24 @@ export function SessionsProvider({ children }: ProviderProps) {
 
   const updateSession = useCallback(
     async (id: string, patch: Partial<Session>) => {
-      dispatch({ type: "UPDATE_SESSION", payload: { id, patch } });
+      // --- Notification Handling ---
+      const originalSession = state.sessions.find((s) => s.id === id);
+
+      // 1. Cancel previous notification if it exists
+      if (originalSession?.scheduledNotificationId) {
+        await cancelSessionReminder(originalSession.scheduledNotificationId);
+      }
+
+      // 2. Schedule a new one if there's a new date
+      const updatedSessionData = { ...originalSession, ...patch };
+      const newNotificationId = await scheduleSessionReminder(updatedSessionData as Session);
+      const finalPatch = { ...patch, scheduledNotificationId: newNotificationId };
+      // --- End Notification Handling ---
+
+      dispatch({ type: "UPDATE_SESSION", payload: { id, patch: finalPatch } });
       try {
-        await persistUpdateSession(id, patch);
-        await syncToFirestore("update session", (cloudUid) => updateSessionInFirestore(id, patch, cloudUid));
+        await persistUpdateSession(id, finalPatch);
+        await syncToFirestore("update session", (cloudUid) => updateSessionInFirestore(id, finalPatch, cloudUid));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to update the study session.";
@@ -195,11 +224,17 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions, syncToFirestore]
+    [refreshSessions, syncToFirestore, state.sessions]
   );
 
   const deleteSession = useCallback(
     async (id: string) => {
+      // Cancel the notification associated with the session being deleted
+      const sessionToDelete = state.sessions.find((s) => s.id === id);
+      if (sessionToDelete?.scheduledNotificationId) {
+        await cancelSessionReminder(sessionToDelete.scheduledNotificationId);
+      }
+
       dispatch({ type: "DELETE_SESSION", payload: id });
       try {
         await persistDeleteSession(id);
@@ -211,7 +246,7 @@ export function SessionsProvider({ children }: ProviderProps) {
         await refreshSessions();
       }
     },
-    [refreshSessions, syncToFirestore]
+    [refreshSessions, syncToFirestore, state.sessions]
   );
 
   const restartSession = useCallback(
@@ -229,7 +264,11 @@ export function SessionsProvider({ children }: ProviderProps) {
         }
       }
 
-      const patch = { completed: false, completedAt: null, rating: -1 };
+      if (sessionToRestart?.scheduledNotificationId) {
+        await cancelSessionReminder(sessionToRestart.scheduledNotificationId);
+      }
+
+      const patch = { completed: false, completedAt: null, rating: -1, scheduledNotificationId: null };
       dispatch({ type: "UPDATE_SESSION", payload: { id, patch } });
       try {
         await persistUpdateSession(id, patch);

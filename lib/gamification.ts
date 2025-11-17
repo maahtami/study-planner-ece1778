@@ -1,14 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchGamificationFromFirestore } from "./firestoreData";
-
-export interface GamificationState {
-  streak: number;                  // current consecutive day streak
-  sessionStreak: number;           // current consecutive session streak
-  badges: string[];                // unlocked badges
-  totalSessionsCompleted: number;  // total sessions completed
-  lastCompletedAt?: string;        // ISO string of last completed session
-  sessionsToday: number;           // number of sessions completed today
-}
+import { GamificationState } from "../types";
 
 // Key used for AsyncStorage
 const STORAGE_KEY = "@gamification_state";
