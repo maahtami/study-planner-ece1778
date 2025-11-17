@@ -6,7 +6,7 @@ export const LightTheme = {
     primary: "#2563EB",
     secondaryText: "#6B7280",
     primaryText: "#FFFFFF",
-    danger: "#DC2626",
+    danger: "#EF4444",
     dangerText: "#FFFFFF",
   };
   
@@ -18,7 +18,7 @@ export const LightTheme = {
     primary: "#3B82F6",
     secondaryText: "#9CA3AF",
     primaryText: "#FFFFFF",
-    danger: "#DC2626",
+    danger: "#EF4444",
     dangerText: "#FFFFFF",
   };
   
