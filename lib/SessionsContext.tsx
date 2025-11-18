@@ -21,6 +21,7 @@ import {
   loadState as loadGamificationState,
   recordSessionCompleted,
   recordSessionUncompleted,
+  resetGamification,
 } from "../lib/gamification";
 import {
   scheduleSessionReminder,
@@ -160,6 +161,15 @@ export function SessionsProvider({ children }: ProviderProps) {
           setGamification(cloudState);
         } catch (e) {
           console.warn("Failed to sync gamification state on auth change", e);
+        }
+      } else {
+        // User is signed out, reset local gamification state
+        try {
+          await resetGamification();
+          const defaultState = await loadGamificationState();
+          setGamification(defaultState);
+        } catch (e) {
+          console.warn("Failed to reset gamification state on sign out", e);
         }
       }
     };
