@@ -8,6 +8,9 @@ import { useGlobalStyles } from '../styles/globalStyles';
 import { Button } from '../components/mid-fi/Button';
 import { Check, X, Star } from 'lucide-react-native';
 import { Quote } from '../types';
+import LottieView from "lottie-react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import { Dimensions } from "react-native";
 
 export default function FocusScreen() {
   const router = useRouter();
@@ -28,6 +31,9 @@ export default function FocusScreen() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
+
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
 
   useEffect(() => {
@@ -85,6 +91,8 @@ export default function FocusScreen() {
   const handleComplete = async () => {
     if (!safeId) return;
     setUpdateCompletion(true);
+    setShowFireworks(true);
+    setShowConfetti(true);
     await fetchQuote();
     setShowQuoteModal(true);
     await completeSession(safeId);
@@ -181,6 +189,51 @@ export default function FocusScreen() {
                 <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
               </TouchableOpacity>
             </View>
+            {/*  Fireworks Animation */}
+            {showFireworks && (
+              <LottieView
+                source={require("../assets/lottie/fireworks.json")}
+                autoPlay
+                loop={false}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 999,
+                  pointerEvents: "none",
+                }}
+                onAnimationFinish={() => setShowFireworks(false)}
+              />
+            )}
+
+            {/* Confetti Animation */}
+            {showConfetti && (
+              <View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  zIndex: 999,
+                }}
+              >
+                <ConfettiCannon
+                  count={100}
+                  origin={{
+                    x: 0.5 * Dimensions.get("window").width,
+                    y: 5,
+                  }}
+                  fadeOut
+                  autoStart
+                  fallSpeed={1500} // lower = slower fall
+                  onAnimationEnd={() => setShowConfetti(false)}
+                />
+              </View>
+            )}
           </View>
         </Modal>
       </SafeAreaView>
