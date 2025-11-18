@@ -170,7 +170,12 @@ export default function FocusScreen() {
                 style={[styles.closeButton, { backgroundColor: theme.primary }]}
                 onPress={() => {
                   setShowQuoteModal(false);
-                  router.back();
+
+                  // Navigate back after a short delay (to enjoy the animations)
+                  router.replace({
+                    pathname: 'session-details',
+                    params: { id: safeId, celebrate: 'true' }
+                  });
                 }}
               >
                 <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
