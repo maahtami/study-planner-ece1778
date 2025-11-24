@@ -12,16 +12,29 @@ import {
   ScrollView,
   Modal,
   Pressable,
+  GestureResponderEvent,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Calendar as CalendarView } from "react-native-calendars";
 import uuid from "react-native-uuid";
-import { Calendar, ArrowLeft } from "lucide-react-native";
+import { Calendar as CalendarIcon, ArrowLeft } from "lucide-react-native";
 import { useGlobalStyles } from "../styles/globalStyles";
 import { Button } from "../components/mid-fi/Button";
 import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/AuthContext";
+import { DOTS } from "../styles/globalStyles";
+import { CalendarMarkedDates, HolidayMap, CalendarDay, HolidayResponse } from "../types";
+
+const HOLIDAY_API = "https://canada-holidays.ca/api/v1/holidays";
+
+const formatDateKey = (value: Date) => {
+  const year = value.getFullYear();
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export default function AddSession() {
   const { edit, id } = useLocalSearchParams();
@@ -38,12 +51,32 @@ export default function AddSession() {
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
-  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
+  const [tempDate, setTempDate] = useState<Date>(new Date());
   const [repeat, setRepeat] = useState(false);
   const [rating, setRating] = useState<number | null>(-1);
+  const [holidayMap, setHolidayMap] = useState<HolidayMap>({});
+  const [isFetchingHolidays, setIsFetchingHolidays] = useState(false);
+  const [holidayError, setHolidayError] = useState<string | null>(null);
   const { sessions, addSession, updateSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
+  const sessionMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    sessions.forEach((session) => {
+      if (!session.date || !session.subject) return;
+      const key = formatDateKey(new Date(session.date));
+      if (!map[key]) {
+        map[key] = [];
+      }
+      map[key].push(session.subject);
+    });
+    return map;
+  }, [sessions]);
+
+  const selectedHolidayNames = date ? holidayMap[formatDateKey(date)] : undefined;
+  const tempHolidayNames = holidayMap[formatDateKey(tempDate)] ?? [];
+  const selectedSessionNames = date ? sessionMap[formatDateKey(date)] : undefined;
+  const tempSessionNames = sessionMap[formatDateKey(tempDate)] ?? [];
   // Load session when editing
   useEffect(() => {
     if (!isEditing || !safeId) return;
@@ -58,6 +91,52 @@ export default function AddSession() {
       setRating(existing.rating || -1);
     }
   }, [isEditing, safeId, sessions]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const loadHolidays = async () => {
+      setIsFetchingHolidays(true);
+      try {
+        const response = await fetch(HOLIDAY_API, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Holiday request failed with ${response.status}`);
+        }
+        const data = (await response.json()) as HolidayResponse;
+        if (!isMounted) return;
+        const map: HolidayMap = {};
+        data.holidays?.forEach((holiday) => {
+          if (!holiday.date || !holiday.nameEn) return;
+          if (!map[holiday.date]) {
+            map[holiday.date] = [];
+          }
+          map[holiday.date].push(holiday.nameEn);
+        });
+        setHolidayMap(map);
+        setHolidayError(null);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") {
+          return;
+        }
+        console.warn("Failed to fetch holidays", err);
+        if (isMounted) {
+          setHolidayError("Unable to load national holidays right now.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsFetchingHolidays(false);
+        }
+      }
+    };
+
+    loadHolidays();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!subject || !duration) {
@@ -103,36 +182,83 @@ export default function AddSession() {
     }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowPicker(Platform.OS === 'ios'); // Keep picker open on iOS for further changes
+  const showDatePicker = () => {
+    setTempDate(date || new Date());
+    setShowPicker(true);
+  };
+
+  const closePicker = () => setShowPicker(false);
+
+  const applySelectedDate = () => {
+    setDate(tempDate);
+    setShowPicker(false);
+  };
+
+  const handleCalendarDayPress = (day: CalendarDay) => {
+    setTempDate((prev) => {
+      const next = new Date(prev);
+      next.setFullYear(day.year, day.month - 1, day.day);
+      return next;
+    });
+  };
+
+  const handleTimePickerChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android" && event?.type === "dismissed") {
+      return;
+    }
     if (selectedDate) {
-      if (Platform.OS === 'android') {
-        if (pickerMode === 'date') {
-          // Date is selected, now show time picker
-          setDate(selectedDate);
-          setPickerMode('time');
-          setShowPicker(true); // Re-show for time
-        } else {
-          // Time is selected, combine with date and close
-          const newDate = new Date(date || new Date());
-          newDate.setHours(selectedDate.getHours());
-          newDate.setMinutes(selectedDate.getMinutes());
-          setDate(newDate);
-          setShowPicker(false); // All done, close
-        }
-      } else {
-        // On iOS, the picker handles both, so just update the date
-        setDate(selectedDate);
-      }
-    } else {
-      // User cancelled picker
-      setShowPicker(false);
+      setTempDate((prev) => {
+        const next = new Date(prev);
+        next.setHours(selectedDate.getHours());
+        next.setMinutes(selectedDate.getMinutes());
+        return next;
+      });
     }
   };
 
-  const showDatePicker = () => {
-    setPickerMode('date');
-    setShowPicker(true);
+  const baseMarkedDates = useMemo<CalendarMarkedDates>(() => {
+    const marks: CalendarMarkedDates = {};
+    Object.keys(holidayMap).forEach((holidayDate) => {
+      if (!marks[holidayDate]) {
+        marks[holidayDate] = { dots: [] };
+      }
+      const hasHolidayDot = marks[holidayDate].dots.some((dot) => dot.key === DOTS.holiday.key);
+      marks[holidayDate].dots = hasHolidayDot
+        ? marks[holidayDate].dots
+        : [...marks[holidayDate].dots, DOTS.holiday];
+      marks[holidayDate].marked = true;
+    });
+    sessions.forEach((session) => {
+      if (!session.date) return;
+      const key = formatDateKey(new Date(session.date));
+      const existingDots = marks[key]?.dots ?? [];
+      const hasSessionDot = existingDots.some((dot) => dot.key === DOTS.session.key);
+      const dots = hasSessionDot ? existingDots : [...existingDots, DOTS.session];
+      marks[key] = {
+        ...(marks[key] ?? { marked: true }),
+        dots,
+      };
+    });
+    return marks;
+  }, [holidayMap, sessions]);
+
+  const markedDates = useMemo<CalendarMarkedDates>(() => {
+    const key = formatDateKey(tempDate);
+    const merged = { ...baseMarkedDates };
+    const dots = merged[key]?.dots ?? [];
+    merged[key] = {
+      ...(merged[key] ?? { dots }),
+      dots,
+      marked: true,
+      selected: true,
+      selectedColor: theme.primary,
+      selectedTextColor: theme.primaryText,
+    };
+    return merged;
+  }, [baseMarkedDates, tempDate, theme.primary, theme.primaryText]);
+
+  const handleInnerPress = (event: GestureResponderEvent) => {
+    event.stopPropagation();
   };
 
   return (
@@ -214,45 +340,105 @@ export default function AddSession() {
               <Text style={[styles.dateText, { color: theme.secondaryText }]}>
                 {date ? date.toLocaleString() : "Select date and time"}
               </Text>
-              <Calendar size={20} color={theme.primaryText}/>
+              <CalendarIcon size={20} color={theme.primaryText}/>
             </TouchableOpacity>
 
-            {showPicker && Platform.OS === 'android' && (
-              <DateTimePicker
-                value={date || new Date()}
-                mode={pickerMode}
-                display="default"
-                onChange={handleDateChange}
-              />
+            {selectedHolidayNames?.length ? (
+              <Text style={styles.holidayPill}>{selectedHolidayNames.join(", ")}</Text>
+            ) : null}
+
+            {selectedSessionNames?.length ? (
+              <Text style={styles.sessionPill}>Sessions: {selectedSessionNames.join(", ")}</Text>
+            ) : null}
+
+            {!selectedHolidayNames?.length && isFetchingHolidays && !holidayError && (
+              <Text style={[styles.holidayStatusText, { color: theme.secondaryText }]}>
+                Loading holidays…
+              </Text>
             )}
 
-            {Platform.OS === 'ios' && (
-              <Modal
-                transparent={true}
-                visible={showPicker}
-                animationType="fade"
-                onRequestClose={() => setShowPicker(false)}
-              >
-                <Pressable style={styles.modalBackdrop} onPress={() => setShowPicker(false)}>
-                  <Pressable style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
-                    <DateTimePicker
-                      value={date || new Date()}
-                      mode="datetime"
-                      display="inline"
-                      onChange={handleDateChange}
-                      textColor={theme.text}
-                    />
-                    <Button
-                      onPress={() => setShowPicker(false)}
-                      style={{ backgroundColor: theme.primary, marginTop: 12 }}
-                      textStyle={{ color: theme.primaryText }}
-                    >
-                      Done
-                    </Button>
-                  </Pressable>
-                </Pressable>
-              </Modal>
+            {holidayError && (
+              <Text style={styles.holidayErrorText}>{holidayError}</Text>
             )}
+
+            <Modal
+              transparent
+              visible={showPicker}
+              animationType="fade"
+              onRequestClose={closePicker}
+            >
+              <Pressable style={styles.modalBackdrop} onPress={closePicker}>
+                <Pressable
+                  onPress={handleInnerPress}
+                  style={[styles.pickerContainer, { backgroundColor: theme.card }]}
+                >
+                  <Text style={[styles.pickerHeading, { color: theme.text }]}>Select date</Text>
+                  <View style={styles.dotLegend}>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: DOTS.holiday.color }]} />
+                      <Text style={[styles.legendText, { color: theme.secondaryText }]}>
+                        National holiday
+                      </Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: DOTS.session.color }]} />
+                      <Text style={[styles.legendText, { color: theme.secondaryText }]}>
+                        Existing session
+                      </Text>
+                    </View>
+                  </View>
+                  {!!tempHolidayNames.length && (
+                    <View style={styles.modalHolidayBadge}>
+                      <Text style={[styles.legendText, styles.modalHolidayText]}>
+                        {tempHolidayNames.join(", ")}
+                      </Text>
+                    </View>
+                  )}
+                  {!!tempSessionNames.length && (
+                    <View style={styles.modalSessionBadge}>
+                      <Text style={[styles.legendText, styles.modalSessionText]}>
+                        Sessions: {tempSessionNames.join(", ")}
+                      </Text>
+                    </View>
+                  )}
+                  <CalendarView
+                    initialDate={formatDateKey(tempDate)}
+                    markedDates={markedDates}
+                    markingType="multi-dot"
+                    onDayPress={handleCalendarDayPress}
+                    enableSwipeMonths
+                    theme={{
+                      calendarBackground: theme.card,
+                      textSectionTitleColor: theme.secondaryText,
+                      todayTextColor: theme.primary,
+                      dayTextColor: theme.text,
+                      monthTextColor: theme.text,
+                      arrowColor: theme.primary,
+                      selectedDayBackgroundColor: theme.primary,
+                      selectedDayTextColor: theme.primaryText,
+                      textDisabledColor: theme.secondaryText,
+                    }}
+                  />
+                  <View style={styles.timePickerWrapper}>
+                    <Text style={[styles.pickerHeading, { color: theme.text }]}>Select time</Text>
+                    <DateTimePicker
+                      value={tempDate}
+                      mode="time"
+                      display={Platform.OS === "ios" ? "spinner" : "clock"}
+                      onChange={handleTimePickerChange}
+                      textColor={Platform.OS === "ios" ? theme.text : undefined}
+                    />
+                  </View>
+                  <Button
+                    onPress={applySelectedDate}
+                    style={{ backgroundColor: theme.primary, marginTop: 12 }}
+                    textStyle={{ color: theme.primaryText }}
+                  >
+                    Save
+                  </Button>
+                </Pressable>
+              </Pressable>
+            </Modal>
 
             {/* Repeat weekly toggle */}
             <View
@@ -363,5 +549,90 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 20,
+  },
+  pickerHeading: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  dotLegend: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 13,
+  },
+  timePickerWrapper: {
+    marginTop: 16,
+  },
+  holidayPill: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    fontSize: 13,
+    marginBottom: 12,
+    color: DOTS.session.color,
+    borderColor: DOTS.session.color,
+    backgroundColor: "rgba(59, 130, 246, 0.08)",
+  },
+  sessionPill: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    fontSize: 13,
+    marginBottom: 12,
+    color: DOTS.session.color,
+    borderColor: DOTS.session.color,
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+  },
+  holidayErrorText: {
+    color: "#dc2626",
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalHolidayBadge: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 12,
+    alignSelf: "flex-start",
+    borderColor: DOTS.session.color,
+    backgroundColor: "rgba(59, 130, 246, 0.08)",
+  },
+  modalSessionBadge: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 12,
+    alignSelf: "flex-start",
+    borderColor: DOTS.session.color,
+    backgroundColor: "rgba(59, 130, 246, 0.08)",
+  },
+  holidayStatusText: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalHolidayText: {
+    color: DOTS.session.color,
+  },
+  modalSessionText: {
+    color: DOTS.session.color,
   },
 });

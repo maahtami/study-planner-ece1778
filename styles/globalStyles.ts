@@ -24,3 +24,8 @@ export const useGlobalStyles = () => {
     },
   });
 };
+
+export const DOTS = {
+  holiday: { key: "holiday", color: "#FACC15" },
+  session: { key: "session", color: "#3B82F6" },
+} as const;

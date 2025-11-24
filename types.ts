@@ -31,3 +31,30 @@ export type GamificationState = {
     lastCompletedAt?: string;        // ISO string of last completed session
     sessionsToday: number;           // number of sessions completed today
 }
+
+export type CalendarMarkedDates = Record<
+  string,
+  {
+    dots: { key: string; color: string }[];
+    marked?: boolean;
+    selected?: boolean;
+    selectedColor?: string;
+    selectedTextColor?: string;
+  }
+>;
+
+export type HolidayMap = Record<string, string[]>;
+
+export type CalendarDay = {
+  dateString: string;
+  day: number;
+  month: number;
+  year: number;
+};
+
+export type HolidayResponse = {
+  holidays?: Array<{
+    date: string;
+    nameEn: string;
+  }>;
+};
