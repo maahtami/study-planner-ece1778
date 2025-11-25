@@ -14,9 +14,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.studyplanner",
+      "bundleIdentifier": "com.ece1778.studyplanner",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "package": "com.anonymous.studyplanner"
+      "package": "com.ece1778.studyplanner",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +29,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "googleServicesFile": "./google-services.json",
-      "package": "com.anonymous.studyplanner"
+      "package": "com.ece1778.studyplanner"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,6 +48,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eb6661e0-7249-455a-a798-a038e160dd1d"
+      }
+    }
   }
 }

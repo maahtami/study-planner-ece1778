@@ -189,8 +189,8 @@ export default function FocusScreen() {
                 <Text style={[styles.closeButtonText, { color: theme.primaryText }]}>Done</Text>
               </TouchableOpacity>
             </View>
-            {/*  Fireworks Animation */}
-            {showFireworks && (
+             {/* Fireworks Animation */}
+            {/* {showFireworks && (
               <LottieView
                 source={require("../assets/lottie/fireworks.json")}
                 autoPlay
@@ -206,7 +206,7 @@ export default function FocusScreen() {
                 }}
                 onAnimationFinish={() => setShowFireworks(false)}
               />
-            )}
+            )} */}
 
             {/* Confetti Animation */}
             {showConfetti && (
