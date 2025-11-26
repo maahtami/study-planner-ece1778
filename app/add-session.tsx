@@ -25,9 +25,9 @@ import { useTheme } from "../lib/ThemeContext";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/AuthContext";
 import { DOTS } from "../styles/globalStyles";
-import { CalendarMarkedDates, HolidayMap, CalendarDay, HolidayResponse } from "../types";
+import { CalendarMarkedDates, HolidayMap, CalendarDay, NagerHoliday } from "../types";
 
-const HOLIDAY_API = "https://canada-holidays.ca/api/v1/holidays";
+const HOLIDAY_API = "https://date.nager.at/api/v3/publicholidays/2025/CA";
 
 const formatDateKey = (value: Date) => {
   const year = value.getFullYear();
@@ -56,13 +56,32 @@ export default function AddSession() {
   const [rating, setRating] = useState<number | null>(-1);
   const [holidayMap, setHolidayMap] = useState<HolidayMap>({});
   const [isFetchingHolidays, setIsFetchingHolidays] = useState(false);
+  const [showHolidayLoading, setShowHolidayLoading] = useState(false);
   const [holidayError, setHolidayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (isFetchingHolidays) {
+      timer = setTimeout(() => {
+        setShowHolidayLoading(true);
+      }, 1000);
+    } else {
+      setShowHolidayLoading(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isFetchingHolidays]);
   const { sessions, addSession, updateSession } = useSessions();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
+
+  const filteredSessions = useMemo(() => {
+    if (!isEditing || !safeId) return sessions;
+    return sessions.filter((s) => s.id !== safeId);
+  }, [sessions, isEditing, safeId]);
+
   const sessionMap = useMemo(() => {
     const map: Record<string, string[]> = {};
-    sessions.forEach((session) => {
+    filteredSessions.forEach((session) => {
       if (!session.date || !session.subject) return;
       const key = formatDateKey(new Date(session.date));
       if (!map[key]) {
@@ -71,7 +90,7 @@ export default function AddSession() {
       map[key].push(session.subject);
     });
     return map;
-  }, [sessions]);
+  }, [filteredSessions]);
 
   const selectedHolidayNames = date ? holidayMap[formatDateKey(date)] : undefined;
   const tempHolidayNames = holidayMap[formatDateKey(tempDate)] ?? [];
@@ -99,19 +118,21 @@ export default function AddSession() {
     const loadHolidays = async () => {
       setIsFetchingHolidays(true);
       try {
-        const response = await fetch(HOLIDAY_API, { signal: controller.signal });
+        const response = await fetch(HOLIDAY_API, { 
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error(`Holiday request failed with ${response.status}`);
         }
-        const data = (await response.json()) as HolidayResponse;
+        const data = (await response.json()) as NagerHoliday[];
         if (!isMounted) return;
         const map: HolidayMap = {};
-        data.holidays?.forEach((holiday) => {
-          if (!holiday.date || !holiday.nameEn) return;
+        data.forEach((holiday) => {
+          if (!holiday.date || !holiday.name) return;
           if (!map[holiday.date]) {
             map[holiday.date] = [];
           }
-          map[holiday.date].push(holiday.nameEn);
+          map[holiday.date].push(holiday.name);
         });
         setHolidayMap(map);
         setHolidayError(null);
@@ -137,6 +158,8 @@ export default function AddSession() {
       controller.abort();
     };
   }, []);
+
+  const [showTimePickerAndroid, setShowTimePickerAndroid] = useState(false);
 
   const handleSave = async () => {
     if (!subject || !duration) {
@@ -203,7 +226,11 @@ export default function AddSession() {
   };
 
   const handleTimePickerChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android" && event?.type === "dismissed") {
+    if (Platform.OS === "android") {
+      setShowTimePickerAndroid(false);
+    }
+    
+    if (event?.type === "dismissed") {
       return;
     }
     if (selectedDate) {
@@ -228,7 +255,7 @@ export default function AddSession() {
         : [...marks[holidayDate].dots, DOTS.holiday];
       marks[holidayDate].marked = true;
     });
-    sessions.forEach((session) => {
+    filteredSessions.forEach((session) => {
       if (!session.date) return;
       const key = formatDateKey(new Date(session.date));
       const existingDots = marks[key]?.dots ?? [];
@@ -240,7 +267,7 @@ export default function AddSession() {
       };
     });
     return marks;
-  }, [holidayMap, sessions]);
+  }, [holidayMap, filteredSessions]);
 
   const markedDates = useMemo<CalendarMarkedDates>(() => {
     const key = formatDateKey(tempDate);
@@ -351,16 +378,6 @@ export default function AddSession() {
               <Text style={styles.sessionPill}>Sessions: {selectedSessionNames.join(", ")}</Text>
             ) : null}
 
-            {!selectedHolidayNames?.length && isFetchingHolidays && !holidayError && (
-              <Text style={[styles.holidayStatusText, { color: theme.secondaryText }]}>
-                Loading holidays…
-              </Text>
-            )}
-
-            {holidayError && (
-              <Text style={styles.holidayErrorText}>{holidayError}</Text>
-            )}
-
             <Modal
               transparent
               visible={showPicker}
@@ -421,13 +438,42 @@ export default function AddSession() {
                   />
                   <View style={styles.timePickerWrapper}>
                     <Text style={[styles.pickerHeading, { color: theme.text }]}>Select time</Text>
-                    <DateTimePicker
-                      value={tempDate}
-                      mode="time"
-                      display={Platform.OS === "ios" ? "spinner" : "clock"}
-                      onChange={handleTimePickerChange}
-                      textColor={Platform.OS === "ios" ? theme.text : undefined}
-                    />
+                    
+                    {Platform.OS === 'ios' ? (
+                      <DateTimePicker
+                        value={tempDate}
+                        mode="time"
+                        display="spinner"
+                        onChange={handleTimePickerChange}
+                        textColor={theme.text}
+                      />
+                    ) : (
+                      <>
+                        <TouchableOpacity 
+                          onPress={() => setShowTimePickerAndroid(true)}
+                          style={{
+                            padding: 12,
+                            backgroundColor: theme.background,
+                            borderRadius: 8,
+                            borderWidth: 1,
+                            borderColor: theme.border,
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Text style={{ fontSize: 18, color: theme.text }}>
+                            {tempDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                        </TouchableOpacity>
+                        {showTimePickerAndroid && (
+                          <DateTimePicker
+                            value={tempDate}
+                            mode="time"
+                            display="clock"
+                            onChange={handleTimePickerChange}
+                          />
+                        )}
+                      </>
+                    )}
                   </View>
                   <Button
                     onPress={applySelectedDate}
@@ -455,16 +501,26 @@ export default function AddSession() {
                 thumbColor={repeat ? theme.background : theme.card}
               />
             </View>
-
-            <Button
-              onPress={handleSave}
-              style={{ backgroundColor: theme.primary, marginTop: 12 }}
-              textStyle={{ color: theme.primaryText }}
-            >
-              {isEditing ? "Update Session" : "Save Session"}
-            </Button>
+            {!selectedHolidayNames?.length && showHolidayLoading && !holidayError && (
+              <Text style={[styles.holidayStatusText, { color: theme.secondaryText }]}>
+                Loading holidays…
+              </Text>
+            )}
+            {holidayError && (
+              <Text style={styles.holidayErrorText}>{holidayError}</Text>
+            )}
           </View>
         </ScrollView>
+
+        <View style={[styles.footer, { backgroundColor: theme.background }]}>
+          <Button
+            onPress={handleSave}
+            style={{ backgroundColor: theme.primary }}
+            textStyle={{ color: theme.primaryText }}
+          >
+            {isEditing ? "Update Session" : "Save Session"}
+          </Button>
+        </View>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -472,17 +528,19 @@ export default function AddSession() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 0,
+    paddingBottom: 100, // Add padding to avoid content being hidden behind footer
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
   },
   contentCard: {
     paddingHorizontal: 20,
     paddingBottom: 28,
     gap: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   backButton: {
     position: "absolute",
