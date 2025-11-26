@@ -90,7 +90,7 @@ export default function HomeScreen() {
                     activeFilter === "week" && { color: theme.background },
                   ]}
                 >
-                  This Week
+                  All Sessions
                 </Text>
               </TouchableOpacity>
             </View>
