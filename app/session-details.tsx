@@ -5,10 +5,10 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
-  ProgressBarAndroid,
   Platform,
   Modal,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "../components/mid-fi/Button";
@@ -18,8 +18,6 @@ import { useSessions } from "../lib/SessionsContext";
 import { useTheme } from "../lib/ThemeContext";
 import { useGlobalStyles } from "../styles/globalStyles";
 
-// import { SessionCompleteAnimation } from "../components/mid-fi/SessionCompleteAnimation";
-import { Quote } from "../types";
 
 export default function SessionDetails() {
   const params = useLocalSearchParams();
@@ -86,7 +84,7 @@ export default function SessionDetails() {
         onPress: async () => {
           setDeleted(true);
           await deleteSession(safeId);
-          router.navigate("/");
+          router.back();
         },
       },
     ]);
@@ -130,64 +128,64 @@ export default function SessionDetails() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
 
-          {/* Session Info */}
-          <Text style={[styles.label, { color: theme.secondaryText }]}>Subject</Text>
-          <Text style={[styles.value, { color: theme.text }]}>{session.subject}</Text>
+            {/* Session Info */}
+            <Text style={[styles.label, { color: theme.secondaryText }]}>Subject</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{session.subject}</Text>
 
-          <Text style={[styles.label, { color: theme.secondaryText }]}>Duration</Text>
-          <Text style={[styles.value, { color: theme.text }]}>{session.duration} minutes</Text>
+            <Text style={[styles.label, { color: theme.secondaryText }]}>Duration</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{session.duration} minutes</Text>
 
-          <Text style={[styles.label, { color: theme.secondaryText }]}>Date & Time</Text>
-          <Text style={[styles.value, { color: theme.text }]}>{formattedDate}</Text>
+            <Text style={[styles.label, { color: theme.secondaryText }]}>Date & Time</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{formattedDate}</Text>
 
-          {session.notes && (
-            <>
-              <Text style={[styles.label, { color: theme.secondaryText }]}>Notes</Text>
-              <Text style={[styles.value, { color: theme.text }]}>{session.notes}</Text>
-            </>
-          )}
+            {session.notes && (
+              <>
+                <Text style={[styles.label, { color: theme.secondaryText }]}>Notes</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{session.notes}</Text>
+              </>
+            )}
 
-          {session.repeat && (
-            <>
-              <Text style={[styles.label, { color: theme.secondaryText }]}>Repeat</Text>
-              <Text style={[styles.value, { color: theme.text }]}>{`Repeats weekly`}</Text>
-            </>
-          )}
+            {session.repeat && (
+              <>
+                <Text style={[styles.label, { color: theme.secondaryText }]}>Repeat</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{`Repeats weekly`}</Text>
+              </>
+            )}
 
-          <Text style={[styles.label, { color: theme.secondaryText }]}>Progress</Text>
-          {Platform.OS === "ios" ? (
+            <Text style={[styles.label, { color: theme.secondaryText }]}>Progress</Text>
             <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
               <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: theme.primary }]} />
             </View>
-          ) : (
-            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={progress / 100} color={theme.primary} />
-          )}
-          <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
-          {session.completed && session.completedAt && (
-            <>
-              <Text style={[styles.label, { color: theme.secondaryText }]}>Completed At</Text>
-              <Text style={[styles.value, { color: theme.text }]}>{new Date(session.completedAt).toLocaleString()}</Text>
-            </>
-          )}
+            <Text style={[styles.progressText, { color: theme.secondaryText }]}>{progress}% complete</Text>
+            {session.completed && session.completedAt && (
+              <>
+                <Text style={[styles.label, { color: theme.secondaryText }]}>Completed At</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{new Date(session.completedAt).toLocaleString()}</Text>
+              </>
+            )}
 
-          {session.completed && session.rating && session.rating > 0 && (
-            <>
-              <Text style={[styles.label, { color: theme.secondaryText }]}>Focus Rating</Text>
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={24}
-                    color={star <= (session.rating || 0) ? "#FFC700" : theme.border}
-                    fill={star <= (session.rating || 0) ? "#FFC700" : "transparent"}
-                  />
-                ))}
-              </View>
-            </>
-          )}
+            {session.completed && typeof session.rating === 'number' && session.rating >= 0 && (
+              <>
+                <Text style={[styles.label, { color: theme.secondaryText }]}>Focus Rating</Text>
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={24}
+                      color={star <= (session.rating || 0) ? "#FFC700" : theme.border}
+                      fill={star <= (session.rating || 0) ? "#FFC700" : "transparent"}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+        </ScrollView>
 
+        <View style={[styles.footer, { backgroundColor: theme.background }]}>
           <View style={styles.buttonRow}>
             <Button
               style={[styles.primaryButton, { backgroundColor: theme.primary }]}
@@ -230,11 +228,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 28,
     gap: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+  },
+  scrollContent: {
+    paddingBottom: 180,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    paddingBottom: 30,
   },
   statsRow: { flexDirection: "row", gap: 16, marginBottom: 16 },
   statCard: { flex: 1, padding: 12, borderRadius: 8, backgroundColor: "#f3f3f3", alignItems: "center" },
@@ -245,7 +249,7 @@ const styles = StyleSheet.create({
   progressBar: { height: 16, borderRadius: 5, marginTop: 8, overflow: "hidden" },
   progressFill: { height: 10, borderRadius: 5 },
   progressText: { fontSize: 16, marginTop: 8 },
-  buttonRow: { flexDirection: "row", gap: 12, marginTop: 28 },
+  buttonRow: { flexDirection: "row", gap: 12 },
   primaryButton: { flex: 1 },
   deleteButton: {
     flexDirection: "row",
@@ -263,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    marginTop: 20,
+    marginTop: 12,
   },
   editText: { fontWeight: "600", fontSize: 16 },
   modalContainer: {
