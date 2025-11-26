@@ -84,8 +84,10 @@ export default function FocusScreen() {
 
   const handleRateSession = async (rating: number) => {
     if (!safeId) return;
-    setSelectedRating(rating);
-    await rateSession(safeId, rating);
+    // Toggle: if clicking the same rating, reset to 0
+    const newRating = rating === selectedRating ? 0 : rating;
+    setSelectedRating(newRating);
+    await rateSession(safeId, newRating);
   };
 
   const handleComplete = async () => {
