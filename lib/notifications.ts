@@ -95,22 +95,37 @@ export async function scheduleSessionReminder(session: {
 }): Promise<string | null> {
   if (!session.date) return null;
 
-  const trigger = new Date(session.date);
-  trigger.setMinutes(trigger.getMinutes() - 5);
+  const sessionTime = new Date(session.date);
+  const now = new Date();
 
-  // Don't schedule reminders for past events
-  if (trigger.getTime() < Date.now()) {
+  // If session is in the past, don't schedule
+  if (sessionTime.getTime() <= now.getTime()) {
     return null;
   }
 
-  const secondsUntilTrigger = (trigger.getTime() - Date.now()) / 1000;
-  console.log("secondsUntilTrigger", secondsUntilTrigger);
+  // Default trigger: 5 minutes before
+  let triggerDate = new Date(sessionTime);
+  triggerDate.setMinutes(triggerDate.getMinutes() - 5);
+
+
+  if (triggerDate.getTime() < now.getTime()) {
+    // If less than 5 mins remaining, notify 10 seconds from now
+    triggerDate = new Date(now.getTime() + 10 * 1000); 
+    
+    // Safety check: if even 5 seconds from now is after session start, just skip
+    if (triggerDate.getTime() > sessionTime.getTime()) {
+       return null; 
+    }
+  }
+
+  const secondsUntilTrigger = (triggerDate.getTime() - now.getTime()) / 1000;
+  console.log("Scheduling reminder for", session.subject, "in", secondsUntilTrigger, "seconds");
 
   try {
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: "Study Session Reminder",
-        body: `Your study session for "${session.subject}" is starting in 5 minutes.`,
+        body: `Your study session for "${session.subject}" is starting soon.`,
         sound: "default",
       },
       trigger: {
