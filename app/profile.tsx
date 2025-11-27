@@ -1,5 +1,6 @@
 // app/profile.tsx
 import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { Animated, Easing } from "react-native";
 import {
   View,
   Text,
@@ -71,6 +72,45 @@ export default function Profile() {
   }, [gamification?.sessionsToday]);
 
   const streak = gamification?.streak ?? 0;
+
+  // Badge pop animation for streak number
+  const streakScale = useRef(new Animated.Value(1)).current;
+  const streakOpacity = useRef(new Animated.Value(1)).current;
+  const prevStreak = useRef<number>(streak);
+
+  useEffect(() => {
+    if (streak > 1 && prevStreak.current < streak) {
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(streakScale, {
+            toValue: 1.3,
+            duration: 200,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
+          }),
+          Animated.timing(streakOpacity, {
+            toValue: 0.7,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(streakScale, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.ease),
+          }),
+          Animated.timing(streakOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    }
+    prevStreak.current = streak;
+  }, [streak]);
   const badges = useMemo(() => {
       const builtIn = [
       { id: 1, name: "Beginner", unlocked: streak >= 1 },
@@ -436,9 +476,17 @@ export default function Profile() {
                 )}
                 <View style={{ zIndex: 1 }}>
                   <Text style={styles.streakLabel}>Current Streak</Text>
-                  <Text style={styles.streakValue}>
+                  <Animated.Text
+                    style={[
+                      styles.streakValue,
+                      {
+                        transform: [{ scale: streakScale }],
+                        opacity: streakOpacity,
+                      },
+                    ]}
+                  >
                     {streak} {streak === 1 ? "day" : "days"} 🔥
-                  </Text>
+                  </Animated.Text>
                 </View>
                 <View style={styles.streakIcon}>
                   <Flame size={24} color="#fff" />
