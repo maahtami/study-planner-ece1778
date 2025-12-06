@@ -142,6 +142,17 @@ These features fulfill the course project requirements by demonstrating navigati
   <img src="assets/screenshots/Notification.png" width="250" />
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/Scheduling.png" width="250" />
+  <img src="assets/screenshots/SessionReminder.png" width="250" />
+  <img src="assets/screenshots/Streaksandbadges.png" width="250" />
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/Themes.png" width="250" />
+  <img src="assets/screenshots/fireworks.png" width="250" />
+</p>
+
 ---
 
 ## 7. Development Guide (Reproducibility)
