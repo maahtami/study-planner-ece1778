@@ -156,7 +156,7 @@ npm install -g expo-cli
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/maahtami/study-planner-ece1778.git
 cd study-planner-ece1778
 ```
 
@@ -172,6 +172,12 @@ npm install
 npm start
 ```
 
+4. Build the project
+
+```bash
+npx expo prebuild --clean
+```
+
 4. Run on Android:
 
 ```bash
@@ -185,7 +191,7 @@ npm run android
 The project includes Firebase configuration files required for authentication and database access:
 
 * `google-services.json` (Android)
-* `GoogleService-Info.plist` (iOS, optional)
+* `GoogleService-Info.plist` (iOS)
 
 To reproduce the project under a different Firebase account, replace these files with your own project credentials.
 
@@ -212,7 +218,12 @@ The Android build was tested on a physical Android device/emulator.
 
 > Contributions align with the Git commit history.
 
-* **Md Tahsin Sharif:** Added Gamification and Animation features, dynamic images and study session completion celebrations
+* **Md Tahsin Sharif:** Implemented Gamification and Animation features. This includes:
+- Implementing code to track day streaks of completed study sessions
+- Adding Session streak section to track session streaks
+- Custom animations for study completion celebrations
+- Dynamic progress images for showing current study progress
+- Drafted README skeleton and content for final report
 * **Team Member 2:** Firebase integration, authentication, data persistence
 * **Team Member 3 (if applicable):** UI components, animations, testing, documentation
 
