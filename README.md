@@ -13,7 +13,7 @@
 | Md Tahsin Sharif                 | 1000805113    | <[tahsin.sharif@mail.utoronto.ca](mailto:tahsin.sharif@mail.utoronto.ca)> |
 | Mahta Miandashti                 | 1010790770    | <[mahta.maindashti@mail.utoronto.ca](mailto:mahta.miandashti@mail.utoronto.ca)> |
 | Wenlong Zheng | 1006720247 | [wenlong.zheng@mail.utoronto.ca](mailto:wenlong.zheng@mail.utoronto.ca) |
-| <Team Member 4 > | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
+| Zhao Ji Wang  | 1005915529 | [zhaoji.wang@mail.utoronto.ca](mailto:zhaoji.wang@mail.utoronto.ca) |
 
 All email addresses listed above are active and may be used for clarification requests.
 
@@ -258,7 +258,9 @@ The Android build was tested on a Android emulator.
   * Managed user data lifecycle (creating, updating, deleting, and reading) using Firebase Firestore.
   * Configured Expo Notifications to schedule alerts for upcoming sessions and custom user-defined times
   * Designed a custom calendar to display national holidays and the user's existing sessions
-* **Team Member 4 :** Contribution4
+* **Zhao Ji Wang:**
+  * Animation on personal profile UI
+  * Initial App Design
 
 ---
 
