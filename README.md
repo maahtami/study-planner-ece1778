@@ -216,8 +216,6 @@ The Android build was tested on a physical Android device/emulator.
 
 ## 9. Individual Contributions
 
-> Contributions align with the Git commit history.
-
 * **Md Tahsin Sharif:** Implemented Gamification and Animation features. This includes:
   - Implementing code to track day streaks of completed study sessions
   - Adding Session streak section to track session streaks
