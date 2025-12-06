@@ -219,11 +219,11 @@ The Android build was tested on a physical Android device/emulator.
 > Contributions align with the Git commit history.
 
 * **Md Tahsin Sharif:** Implemented Gamification and Animation features. This includes:
-- Implementing code to track day streaks of completed study sessions
-- Adding Session streak section to track session streaks
-- Custom animations for study completion celebrations
-- Dynamic progress images for showing current study progress
-- Drafted README skeleton and content for final report
+  - Implementing code to track day streaks of completed study sessions
+  - Adding Session streak section to track session streaks
+  - Custom animations for study completion celebrations
+  - Dynamic progress images for showing current study progress
+  - Drafted README skeleton and content for final report
 * **Team Member 2:** Firebase integration, authentication, data persistence
 * **Team Member 3 (if applicable):** UI components, animations, testing, documentation
 
