@@ -10,8 +10,8 @@
 
 | Name                            | Student Number | Preferred Email                               |
 | ------------------------------- | -------------- | --------------------------------------------- |
-| Md Tahsin Sharif                 | 1000805113    | <[tahsin.sharif@mail.utoronto.ca](mailto:tahsin.sharif@mail.utoronto.ca)> |
-| Mahta Miandashti                 | 1010790770    | <[mahta.maindashti@mail.utoronto.ca](mailto:mahta.miandashti@mail.utoronto.ca)> |
+| Md Tahsin Sharif                 | 1000805113    | [tahsin.sharif@mail.utoronto.ca](mailto:tahsin.sharif@mail.utoronto.ca) |
+| Mahta Miandashti                 | 1010790770    | [mahta.maindashti@mail.utoronto.ca](mailto:mahta.miandashti@mail.utoronto.ca) |
 | Wenlong Zheng | 1006720247 | [wenlong.zheng@mail.utoronto.ca](mailto:wenlong.zheng@mail.utoronto.ca) |
 | Zhao Ji Wang  | 1005915529 | [zhaoji.wang@mail.utoronto.ca](mailto:zhaoji.wang@mail.utoronto.ca) |
 
@@ -160,6 +160,12 @@ These features fulfill the course project requirements by demonstrating navigati
   <img src="assets/screenshots/Themes.png" width="250" />
   <img src="assets/screenshots/fireworks.png" width="250" />
 </p>
+## Video Demo
+
+<img src="assets/video/demo.mp4" alt="Video Demo" style="zoom:33%;" />
+
+
+
 
 ---
 
