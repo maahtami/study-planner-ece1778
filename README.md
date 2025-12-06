@@ -224,8 +224,9 @@ The Android build was tested on a physical Android device/emulator.
   - Custom animations for study completion celebrations
   - Dynamic progress images for showing current study progress
   - Drafted README skeleton and content for final report
-* **Team Member 2:** Firebase integration, authentication, data persistence
-* **Team Member 3 (if applicable):** UI components, animations, testing, documentation
+* **Team Member 2:** Contribution2
+* **Team Member 3 :** Contribution3
+* **Team Member 4 :** Contribution4
 
 ---
 
