@@ -128,38 +128,19 @@ These features fulfill the course project requirements by demonstrating navigati
 
 * When a session or goal is completed, an animation is shown to acknowledge progress.
 
-## 📸 App Screenshots
+## 📸 App Screenshots (Grid)
 
-### Countdown
-![Countdown](assets/screenshots/Countdown.png)
+<p align="center">
+  <img src="assets/screenshots/Countdown.png" width="250" />
+  <img src="assets/screenshots/Dailycompletio.png" width="250" />
+  <img src="assets/screenshots/Darklight.png" width="250" />
+</p>
 
-### Daily Completion
-![Daily Completion](assets/screenshots/Dailycompletio.png)
-
-### Dark Mode / Light Mode
-![Dark Mode](assets/screenshots/Darklight.png)
-![Daylight Mode](assets/screenshots/Daylight.png)
-
-### Focus Rating
-![Focus Rating](assets/screenshots/FocusRating.png)
-
-### Notification
-![Notification](assets/screenshots/Notification.png)
-
-### Scheduling
-![Scheduling](assets/screenshots/Scheduling.png)
-
-### Session Reminder
-![Session Reminder](assets/screenshots/SessionReminder.png)
-
-### Streaks and Badges
-![Streaks and Badges](assets/screenshots/Streaksandbadges.png)
-
-### Themes
-![Themes](assets/screenshots/Themes.png)
-
-### Fireworks
-![Fireworks](assets/screenshots/fireworks.png)
+<p align="center">
+  <img src="assets/screenshots/Daylight.png" width="250" />
+  <img src="assets/screenshots/FocusRating.png" width="250" />
+  <img src="assets/screenshots/Notification.png" width="250" />
+</p>
 
 ---
 
