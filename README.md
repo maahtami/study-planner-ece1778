@@ -11,7 +11,7 @@
 | Name                            | Student Number | Preferred Email                               |
 | ------------------------------- | -------------- | --------------------------------------------- |
 | Md Tahsin Sharif                 | 1000805113    | <[tahsin.sharif@mail.utoronto.ca](mailto:tahsin.sharif@mail.utoronto.ca)> |
-| <Team Member 2>                 | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
+| Mahta Miandashti                 | 1010790770    | <[mahta.maindashti@mail.utoronto.ca](mailto:mahta.miandashti@mail.utoronto.ca)> |
 | <Team Member 3 > | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
 | <Team Member 4 > | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
 
@@ -221,7 +221,12 @@ The Android build was tested on a physical Android device/emulator.
   - Custom animations for study completion celebrations
   - Dynamic progress images for showing current study progress
   - Drafted README skeleton and content for final report
-* **Team Member 2:** Contribution2
+* **Mahta Miandashti:**
+  - Designing wireframes and ensuring intuitive user flow across all screens (Home, Add Session, Details, Profile).  
+  - Creating responsive layouts with accessibility compliance.  
+  - Implementing navigation using Expo Router with TypeScript.  
+  - Integrating icons, animations, and styling to achieve a cohesive design system.  
+  - Conducting usability reviews with the team before finalizing UI components.
 * **Team Member 3 :** Contribution3
 * **Team Member 4 :** Contribution4
 
