@@ -128,7 +128,38 @@ These features fulfill the course project requirements by demonstrating navigati
 
 * When a session or goal is completed, an animation is shown to acknowledge progress.
 
-> Screenshots can be added to this section by placing image files in the repository (e.g., `assets/screenshots/`) and referencing them in Markdown.
+## 📸 App Screenshots
+
+### Countdown
+![Countdown](assets/screenshots/Countdown.png)
+
+### Daily Completion
+![Daily Completion](assets/screenshots/Dailycompletio.png)
+
+### Dark Mode / Light Mode
+![Dark Mode](assets/screenshots/Darklight.png)
+![Daylight Mode](assets/screenshots/Daylight.png)
+
+### Focus Rating
+![Focus Rating](assets/screenshots/FocusRating.png)
+
+### Notification
+![Notification](assets/screenshots/Notification.png)
+
+### Scheduling
+![Scheduling](assets/screenshots/Scheduling.png)
+
+### Session Reminder
+![Session Reminder](assets/screenshots/SessionReminder.png)
+
+### Streaks and Badges
+![Streaks and Badges](assets/screenshots/Streaksandbadges.png)
+
+### Themes
+![Themes](assets/screenshots/Themes.png)
+
+### Fireworks
+![Fireworks](assets/screenshots/fireworks.png)
 
 ---
 
