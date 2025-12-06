@@ -159,26 +159,25 @@ npm install -g expo-cli
 git clone https://github.com/maahtami/study-planner-ece1778.git
 cd study-planner-ece1778
 ```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Start the development server:
-
-```bash
-npm start
-```
-
-4. Build the project
+2. Build the project
 
 ```bash
 npx expo prebuild --clean
 ```
 
-4. Run on Android:
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Start the development server:
+
+```bash
+npm start
+```
+
+5. Run on Android:
 
 ```bash
 npm run android
