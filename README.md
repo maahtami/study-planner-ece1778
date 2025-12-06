@@ -12,7 +12,7 @@
 | ------------------------------- | -------------- | --------------------------------------------- |
 | Md Tahsin Sharif                 | 1000805113    | <[tahsin.sharif@mail.utoronto.ca](mailto:tahsin.sharif@mail.utoronto.ca)> |
 | Mahta Miandashti                 | 1010790770    | <[mahta.maindashti@mail.utoronto.ca](mailto:mahta.miandashti@mail.utoronto.ca)> |
-| <Team Member 3 > | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
+| Wenlong Zheng | 1006720247 | [wenlong.zheng@mail.utoronto.ca](mailto:wenlong.zheng@mail.utoronto.ca) |
 | <Team Member 4 > | <Student #>    | <[email@domain.com](mailto:email@domain.com)> |
 
 All email addresses listed above are active and may be used for clarification requests.
@@ -62,7 +62,7 @@ The application is implemented using the following technologies (as reflected in
 
 ### State Management
 
-* **React Context API** with React hooks (`useState`, `useEffect`)
+* **React Context API** with React hooks (`useState`, `useEffect`, `useReducer`)
 
 ### Backend / Services
 
@@ -110,14 +110,22 @@ These features fulfill the course project requirements by demonstrating navigati
 ### Launching the App
 
 1. Open the app on an Android device or emulator.
-2. Sign in using the authentication screen.
+2. Navigate to the "Profile" screen
+3. Click "Sign in/Create account" tab for authentication
 
 ### Creating a Study Session
 
-1. Navigate to the "Add Session" screen.
-2. Select a subject or goal.
-3. Choose date and time.
-4. Save the session.
+1. Navigate to the "Home" screen.
+2. Click on "Add Session" button
+3. Fill a subject, duration, and optionally note.
+4. Choose date and time.
+5. Save the session.
+
+### Start a Study Session
+
+1. Navigate to the "Home" screen
+2. Click on the desired session
+3. Click on the "Start Session" button
 
 ### Tracking Progress
 
@@ -165,6 +173,7 @@ Ensure the following are installed:
 * npm or yarn
 * Expo CLI
 * Android Studio (for Android development)
+* Xcode (For iOS development)
 
 Install Expo CLI globally:
 
@@ -182,38 +191,39 @@ npm install -g expo-cli
 git clone https://github.com/maahtami/study-planner-ece1778.git
 cd study-planner-ece1778
 ```
-2. Build the project
 
-```bash
-npx expo prebuild --clean
-```
-
-3. Install dependencies:
+2. Install Dependencies:
 
 ```bash
 npm install
 ```
 
-4. Start the development server:
+3. Build the project locally
 
 ```bash
-npm start
+npx expo prebuild --clean
 ```
 
-5. Run on Android:
+4. Run on Android:
 
 ```bash
-npm run android
+npx expo run:android
+```
+
+5. Run on IOS:
+
+```bash
+npx expo run:ios
 ```
 
 ---
 
 ### Firebase Configuration
 
-The project includes Firebase configuration files required for authentication and database access:
+The project includes Firebase configuration files required for authentication and database access on the root directory:
 
-* `google-services.json` (Android)
-* `GoogleService-Info.plist` (iOS)
+* [google-services.json ](./google-services.json)(Android)
+* [GoogleService-Info.plist](./GoogleService-Info.plist)(iOS)
 
 To reproduce the project under a different Firebase account, replace these files with your own project credentials.
 
@@ -223,16 +233,9 @@ To reproduce the project under a different Firebase account, replace these files
 
 ### Android Build (Required for Grading)
 
-> **Provide one of the following:**
+* Downloadable APK: https://expo.dev/artifacts/eas/h2z5covUiakh5kd8JbR31B.apk
 
-* Downloadable APK: `<link>`
-* EAS Build link: `<link>`
-
-The Android build was tested on a physical Android device/emulator.
-
-### iOS Build (Optional)
-
-* TestFlight link or IPA file (if available)
+The Android build was tested on a Android emulator.
 
 ---
 
@@ -250,7 +253,11 @@ The Android build was tested on a physical Android device/emulator.
   - Implementing navigation using Expo Router with TypeScript.  
   - Integrating icons, animations, and styling to achieve a cohesive design system.  
   - Conducting usability reviews with the team before finalizing UI components.
-* **Team Member 3 :** Contribution3
+* **Wenlong Zheng:** Implemented Backend Services, Authentication, and Notification features. This includes:
+  * Integrated `react-native-firebase/auth` to handle account creation and sign-in processes via Firebase
+  * Managed user data lifecycle (creating, updating, deleting, and reading) using Firebase Firestore.
+  * Configured Expo Notifications to schedule alerts for upcoming sessions and custom user-defined times
+  * Designed a custom calendar to display national holidays and the user's existing sessions
 * **Team Member 4 :** Contribution4
 
 ---
