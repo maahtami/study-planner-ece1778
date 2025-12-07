@@ -177,7 +177,7 @@ These features fulfill the course project requirements by demonstrating navigati
 ## Step-by-step Walkthrough of Study Planner App
 
 <div align="center">
-  <img src="assets/video/demo.gif" width="480" alt="Demo GIF" />
+  <img src="assets/video/demo.gif" width="250" alt="Demo GIF" />
   <p style="margin-top: 5px; font-style: italic; color: gray;">
     <b>Figure 6:</b> Step-by-step walkthrough of the Study Planner App
   </p>
