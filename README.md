@@ -159,6 +159,33 @@ These features fulfill the course project requirements by demonstrating navigati
 2. Click on the desired session
 3. Click on the "Start Session" button
 
+<div align="center">
+  <img
+    src="assets/finalscreenshots/sessionavailabledashboard.png"
+    width="240"
+    height="480"
+    style="margin-right: 16px; object-fit: contain;"
+    alt="Session after adding"
+  />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img
+    src="assets/finalscreenshots/sessiondetailsbeforestart.png"
+    width="240"
+    height="480"
+    alt="Study session details before starting session"
+  />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img
+    src="assets/finalscreenshots/started.png"
+    width="240"
+    height="480"
+    alt="Study session timer on"
+  />
+  <p>
+    <strong>Figure 2:</strong> Selecting Study Session (left), confirming Study Session details (middle) and Starting Study Session with Timer (right)
+  </p>
+</div>
+
 ### Tracking Progress
 
 * Mark sessions as completed after studying.
