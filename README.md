@@ -134,15 +134,22 @@ These features fulfill the course project requirements by demonstrating navigati
     style="margin-right: 16px; object-fit: contain;"
     alt="Add study session screen"
   />
-  &nbsp;&nbsp;&nbsp;&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <img
     src="assets/finalscreenshots/details.png"
     width="240"
     height="480"
     alt="Study session details screen"
   />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img
+    src="assets/finalscreenshots/sessiondetailsbeforestart.png"
+    width="240"
+    height="480"
+    alt="Study session details filled out"
+  />
   <p>
-    <strong>Figure 2:</strong> Adding a study session (left) and writing session details (right)
+    <strong>Figure 2:</strong> Adding a study session (left), writing session details (middle) and completed details (right)
   </p>
 </div>
 
