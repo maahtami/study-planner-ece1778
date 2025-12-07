@@ -113,6 +113,10 @@ These features fulfill the course project requirements by demonstrating navigati
 2. Navigate to the "Profile" screen
 3. Click "Sign in/Create account" tab for authentication
 
+<div align="center">
+  <img src="assets/screenshots/Daylight.png" width="250" alt="Daylight screen" />
+</div>
+
 ### Creating a Study Session
 
 1. Navigate to the "Home" screen.
@@ -145,7 +149,6 @@ These features fulfill the course project requirements by demonstrating navigati
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/Daylight.png" width="250" />
   <img src="assets/screenshots/FocusRating.png" width="250" />
   <img src="assets/screenshots/Notification.png" width="250" />
 </p>
