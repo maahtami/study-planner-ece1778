@@ -132,7 +132,7 @@ These features fulfill the course project requirements by demonstrating navigati
 | <img src="assets/finalscreenshots/create.png" width="240" /> <br> **(a)** Add study session | <img src="assets/finalscreenshots/details.png" width="240" /> <br> **(b)** Enter session details | <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" /> <br> **(c)** Completed session details |
 
 <div align="center">
-**Figure 2:** Creating a study session from initial setup to completed details
+<b>Figure 2:</b> Creating a study session from initial setup to completed details
 </div>
 
 
@@ -149,7 +149,7 @@ These features fulfill the course project requirements by demonstrating navigati
 | <img src="assets/finalscreenshots/sessionavailabledashboard.png" width="240" /> <br> **(a)** Selecting Study Session | <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" /> <br> **(b)** Confirm Session Details | <img src="assets/finalscreenshots/started.png" width="240" /> <br> **(c)** Start Study Session Timer |
 
 <div align="center">
-**Figure 3:** Starting a stored study session
+<b>Figure 3:</b>  Starting a stored study session
 </div>
 
 ### Tracking Progress
