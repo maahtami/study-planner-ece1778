@@ -127,9 +127,22 @@ These features fulfill the course project requirements by demonstrating navigati
 5. Save the session.
 
 <div align="center">
-  <img src="assets/finalscreenshots/create.png" width="250" alt="Daylight screen" />
-  <img src="assets/finalscreenshots/details.png" width="250" alt="Daylight screen" />
-  <p><strong>Figure 2:</strong> Adding a Study Session (left) and writing session details (right)</p>
+  <img
+    src="assets/finalscreenshots/create.png"
+    width="240"
+    height="480"
+    style="margin-right: 16px; object-fit: contain;"
+    alt="Add study session screen"
+  />
+  <img
+    src="assets/finalscreenshots/details.png"
+    width="240"
+    height="480"
+    alt="Study session details screen"
+  />
+  <p>
+    <strong>Figure 2:</strong> Adding a study session (left) and writing session details (right)
+  </p>
 </div>
 
 ### Start a Study Session
