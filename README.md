@@ -126,28 +126,12 @@ These features fulfill the course project requirements by demonstrating navigati
 4. Choose date and time.
 5. Save the session.
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" style="padding-right: 24px;">
-        <img src="assets/finalscreenshots/create.png" width="240" height="480" alt="Add study session screen" />
-        <p><strong>(a)</strong> Add study session</p>
-      </td>
+| | | |
+|---|---|---|
+| <img src="assets/finalscreenshots/create.png" width="240" /> <br> **(a)** Add study session | <img src="assets/finalscreenshots/details.png" width="240" /> <br> **(b)** Enter session details | <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" /> <br> **(c)** Completed session details |
 
-      <td align="center" style="padding-right: 24px;">
-        <img src="assets/finalscreenshots/details.png" width="240" height="480" alt="Study session details screen" />
-        <p><strong>(b)</strong> Enter session details</p>
-      </td>
+**Figure 2:** Creating a study session from initial setup to completed details
 
-      <td align="center">
-        <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" height="480" alt="Completed study session details" />
-        <p><strong>(c)</strong> Completed session details</p>
-      </td>
-    </tr>
-  </table>
-
-  <p><strong>Figure 2:</strong> Creating a study session from initial setup to completed details</p>
-</div>
 
 
 
