@@ -177,13 +177,8 @@ These features fulfill the course project requirements by demonstrating navigati
 ## Step-by-step Walkthrough of Study Planner App
 
 <div align="center">
-  <video width="480" controls poster="assets/video/demo-thumbnail.png">
-    <source src="assets/video/demo.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <img src="assets/video/demo.gif" width="480" alt="Demo GIF" />
 </div>
-
-
 
 ---
 
