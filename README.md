@@ -174,6 +174,12 @@ These features fulfill the course project requirements by demonstrating navigati
   <p><strong>Figure 5:</strong> Profile screen showing rewards and achievements</p>
 </div>
 
+ntrols>
+    <source src="assets/video/demo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
 ---
 
 ## 7. Development Guide (Reproducibility)
