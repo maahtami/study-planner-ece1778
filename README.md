@@ -162,7 +162,7 @@ These features fulfill the course project requirements by demonstrating navigati
 | <img src="assets/finalscreenshots/animationaftercompletion.png" width="240" /> <br> **(a)** Selecting Study Session | <img src="assets/finalscreenshots/ratefocus.png" width="240" /> <br> **(b)** Confirm Session Details |
 
 <div align="center">
-**Figure 4:** Completing a Study Session
+<b>Figure 4:</b> Completing a Study Session
 </div>
 
 ### Completion Feedback
@@ -173,36 +173,6 @@ These features fulfill the course project requirements by demonstrating navigati
   <img src="assets/finalscreenshots/profileaftercompletion.png" width="250" alt="profileaftercompleting" />
   <p><strong>Figure 5:</strong> Profile screen showing rewards and achievements</p>
 </div>
-
-## 📸 App Screenshots (Grid)
-
-<p align="center">
-  <img src="assets/screenshots/Countdown.png" width="250" />
-  <img src="assets/screenshots/Dailycompletio.png" width="250" />
-  <img src="assets/screenshots/Darklight.png" width="250" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/FocusRating.png" width="250" />
-  <img src="assets/screenshots/Notification.png" width="250" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/Scheduling.png" width="250" />
-  <img src="assets/screenshots/SessionReminder.png" width="250" />
-  <img src="assets/screenshots/Streaksandbadges.png" width="250" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/Themes.png" width="250" />
-  <img src="assets/screenshots/fireworks.png" width="250" />
-</p>
-## Video Demo
-
-<img src="assets/video/demo.mp4" alt="Video Demo" style="zoom:33%;" />
-
-
-
 
 ---
 
