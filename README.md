@@ -114,7 +114,8 @@ These features fulfill the course project requirements by demonstrating navigati
 3. Click "Sign in/Create account" tab for authentication
 
 <div align="center">
-  <img src="assets/screenshots/Daylight.png" width="250" alt="Daylight screen" />
+  <img src="assets/finalscreenshots/signin.png" width="250" alt="Daylight screen" />
+  <p><strong>Figure 1:</strong> Profile screen with Sign in / Create account option</p>
 </div>
 
 ### Creating a Study Session
@@ -124,6 +125,12 @@ These features fulfill the course project requirements by demonstrating navigati
 3. Fill a subject, duration, and optionally note.
 4. Choose date and time.
 5. Save the session.
+
+<div align="center">
+  <img src="assets/finalscreenshots/create.png" width="250" alt="Daylight screen" />
+  <img src="assets/finalscreenshots/details.png" width="250" alt="Daylight screen" />
+  <p><strong>Figure 2:</strong> Adding a Study Session (left) and writing session details (right)</p>
+</div>
 
 ### Start a Study Session
 
