@@ -129,46 +129,26 @@ These features fulfill the course project requirements by demonstrating navigati
 <div align="center">
   <table>
     <tr>
-      <td align="center">
-        <img
-          src="assets/finalscreenshots/create.png"
-          width="240"
-          height="480"
-          alt="Add study session screen"
-        />
+      <td align="center" style="padding-right: 24px;">
+        <img src="assets/finalscreenshots/create.png" width="240" height="480" alt="Add study session screen" />
         <p><strong>(a)</strong> Add study session</p>
       </td>
 
-      <td width="20"></td>
-
-      <td align="center">
-        <img
-          src="assets/finalscreenshots/details.png"
-          width="240"
-          height="480"
-          alt="Study session details screen"
-        />
+      <td align="center" style="padding-right: 24px;">
+        <img src="assets/finalscreenshots/details.png" width="240" height="480" alt="Study session details screen" />
         <p><strong>(b)</strong> Enter session details</p>
       </td>
 
-      <td width="20"></td>
-
       <td align="center">
-        <img
-          src="assets/finalscreenshots/sessiondetailsbeforestart.png"
-          width="240"
-          height="480"
-          alt="Completed study session details"
-        />
+        <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" height="480" alt="Completed study session details" />
         <p><strong>(c)</strong> Completed session details</p>
       </td>
     </tr>
   </table>
 
-  <p>
-    <strong>Figure 2:</strong> Creating a study session from initial setup to completed details
-  </p>
+  <p><strong>Figure 2:</strong> Creating a study session from initial setup to completed details</p>
 </div>
+
 
 
 ### Start a Study Session
