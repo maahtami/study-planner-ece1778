@@ -134,6 +134,7 @@ These features fulfill the course project requirements by demonstrating navigati
     style="margin-right: 16px; object-fit: contain;"
     alt="Add study session screen"
   />
+  &nbsp;&nbsp;&nbsp;&nbsp;
   <img
     src="assets/finalscreenshots/details.png"
     width="240"
