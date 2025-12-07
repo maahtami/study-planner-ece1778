@@ -126,11 +126,10 @@ These features fulfill the course project requirements by demonstrating navigati
 4. Choose date and time.
 5. Save the session.
 
-<div align="center">
+
 | | | |
 |---|---|---|
 | <img src="assets/finalscreenshots/create.png" width="240" /> <br> **(a)** Add study session | <img src="assets/finalscreenshots/details.png" width="240" /> <br> **(b)** Enter session details | <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" /> <br> **(c)** Completed session details |
-</div>
 
 <div align="center">
 **Figure 2:** Creating a study session from initial setup to completed details
@@ -145,31 +144,12 @@ These features fulfill the course project requirements by demonstrating navigati
 2. Click on the desired session
 3. Click on the "Start Session" button
 
+| | | |
+|---|---|---|
+| <img src="assets/finalscreenshots/sessionavailabledashboard.png" width="240" /> <br> **(a)** Selecting Study Session | <img src="assets/finalscreenshots/sessiondetailsbeforestart.png" width="240" /> <br> **(b)** Confirm Session Details | <img src="assets/finalscreenshots/started.png" width="240" /> <br> **(c)** Start Study Session Timer |
+
 <div align="center">
-  <img
-    src="assets/finalscreenshots/sessionavailabledashboard.png"
-    width="240"
-    height="480"
-    style="margin-right: 16px; object-fit: contain;"
-    alt="Session after adding"
-  />
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img
-    src="assets/finalscreenshots/sessiondetailsbeforestart.png"
-    width="240"
-    height="480"
-    alt="Study session details before starting session"
-  />
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img
-    src="assets/finalscreenshots/started.png"
-    width="240"
-    height="480"
-    alt="Study session timer on"
-  />
-  <p>
-    <strong>Figure 2:</strong> Selecting Study Session (left), confirming Study Session details (middle) and Starting Study Session with Timer (right)
-  </p>
+**Figure 3:** Starting a stored study session
 </div>
 
 ### Tracking Progress
@@ -177,9 +157,22 @@ These features fulfill the course project requirements by demonstrating navigati
 * Mark sessions as completed after studying.
 * View updated progress indicators on the main dashboard.
 
+| | |
+|---|---|
+| <img src="assets/finalscreenshots/animationaftercompletion.png" width="240" /> <br> **(a)** Selecting Study Session | <img src="assets/finalscreenshots/ratefocus.png" width="240" /> <br> **(b)** Confirm Session Details |
+
+<div align="center">
+**Figure 4:** Completing a Study Session
+</div>
+
 ### Completion Feedback
 
 * When a session or goal is completed, an animation is shown to acknowledge progress.
+
+<div align="center">
+  <img src="assets/finalscreenshots/profileaftercompletion.png" width="250" alt="profileaftercompleting" />
+  <p><strong>Figure 5:</strong> Profile screen showing rewards and achievements</p>
+</div>
 
 ## 📸 App Screenshots (Grid)
 
