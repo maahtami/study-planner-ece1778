@@ -127,31 +127,49 @@ These features fulfill the course project requirements by demonstrating navigati
 5. Save the session.
 
 <div align="center">
-  <img
-    src="assets/finalscreenshots/create.png"
-    width="240"
-    height="480"
-    style="margin-right: 16px; object-fit: contain;"
-    alt="Add study session screen"
-  />
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img
-    src="assets/finalscreenshots/details.png"
-    width="240"
-    height="480"
-    alt="Study session details screen"
-  />
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img
-    src="assets/finalscreenshots/sessiondetailsbeforestart.png"
-    width="240"
-    height="480"
-    alt="Study session details filled out"
-  />
+  <table>
+    <tr>
+      <td align="center">
+        <img
+          src="assets/finalscreenshots/create.png"
+          width="240"
+          height="480"
+          alt="Add study session screen"
+        />
+        <p><strong>(a)</strong> Add study session</p>
+      </td>
+
+      <td width="20"></td>
+
+      <td align="center">
+        <img
+          src="assets/finalscreenshots/details.png"
+          width="240"
+          height="480"
+          alt="Study session details screen"
+        />
+        <p><strong>(b)</strong> Enter session details</p>
+      </td>
+
+      <td width="20"></td>
+
+      <td align="center">
+        <img
+          src="assets/finalscreenshots/sessiondetailsbeforestart.png"
+          width="240"
+          height="480"
+          alt="Completed study session details"
+        />
+        <p><strong>(c)</strong> Completed session details</p>
+      </td>
+    </tr>
+  </table>
+
   <p>
-    <strong>Figure 2:</strong> Adding a study session (left), writing session details (middle) and completed details (right)
+    <strong>Figure 2:</strong> Creating a study session from initial setup to completed details
   </p>
 </div>
+
 
 ### Start a Study Session
 
