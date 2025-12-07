@@ -178,6 +178,9 @@ These features fulfill the course project requirements by demonstrating navigati
 
 <div align="center">
   <img src="assets/video/demo.gif" width="480" alt="Demo GIF" />
+  <p style="margin-top: 5px; font-style: italic; color: gray;">
+    Demo: Step-by-step walkthrough of the Study Planner App
+  </p>
 </div>
 
 ---
